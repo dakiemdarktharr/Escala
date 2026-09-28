@@ -3,9 +3,9 @@
 import { useId } from "react";
 import type { ThreadDetailResponse } from "@/domain/contracts";
 import { Icon } from "@/components/ui/icon";
-import { actionLabels, dateLabel, EmptyState, readable } from "./presentation";
+import { actionLabels, dateLabel, EmptyState, LevelBadge, readable, TriageSignals } from "./presentation";
 
-export type ContextTab = "evidence" | "activity";
+export type ContextTab = "analysis" | "evidence" | "activity";
 
 export function ContextPanel({
   detail,
@@ -36,6 +36,7 @@ export function ContextPanel({
       >
         {(
           [
+            ["analysis", "Analysis"],
             ["evidence", "Evidence"],
             ["activity", "Activity"],
           ] as const
@@ -53,14 +54,13 @@ export function ContextPanel({
                 ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
               ) {
                 event.preventDefault();
+                const tabs: ContextTab[] = ["analysis", "evidence", "activity"];
                 const target =
                   event.key === "Home"
-                    ? "evidence"
+                    ? "analysis"
                     : event.key === "End"
                       ? "activity"
-                      : tab === "evidence"
-                        ? "activity"
-                        : "evidence";
+                      : tabs[(tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : 2)) % 3];
                 onTabChange(target);
                 document.getElementById(`${id}-${target}`)?.focus();
               }
@@ -78,7 +78,30 @@ export function ContextPanel({
         aria-labelledby={`${id}-${tab}`}
         tabIndex={0}
       >
-        {tab === "evidence" ? (
+        {tab === "analysis" ? (
+          <>
+            <section className="context-section">
+              <div className="section-title"><Icon name="spark" size={17} /><h3>Buyer message analysis</h3></div>
+              <p className="context-explanation">Intent: {readable(detail.thread.intent)}</p>
+              <TriageSignals thread={detail.thread} sample={sample} />
+            </section>
+            {detail.recommendation && <section className="context-section">
+              <div className="section-title"><Icon name="shield" size={17} /><h3>Reply policy & confidence</h3></div>
+              <LevelBadge kind="risk" level={detail.recommendation.risk} />
+              <dl className="analysis-facts">
+                <div><dt>Next step</dt><dd>{detail.recommendation.recommendedStep || "Review buyer request"}</dd></div>
+                <div><dt>Delivery</dt><dd>{readable(detail.recommendation.deliveryState || "REVIEW_REQUIRED")}</dd></div>
+                <div><dt>Confidence</dt><dd>{detail.recommendation.confidence !== null && Number.isFinite(detail.recommendation.confidence) ? `${Math.round(detail.recommendation.confidence * 100)}%` : "Unavailable"}</dd></div>
+                {Number.isFinite(detail.recommendation.confidenceThreshold) && <div><dt>Auto-send threshold</dt><dd>{Math.round(detail.recommendation.confidenceThreshold * 100)}%</dd></div>}
+                <div><dt>Draft source</dt><dd>{sample ? "Sample template" : detail.recommendation.draftSource === "openai" ? "OpenAI generated" : detail.recommendation.draftSource === "template" ? "Reviewed template fallback" : "Unavailable"}</dd></div>
+                <div><dt>Policy</dt><dd>{detail.recommendation.policyVersion}</dd></div>
+              </dl>
+              <p className="context-footnote">Risk approval is independent of confidence. Delivery is simulated; no marketplace or order action is performed.</p>
+              <details className="audit-details" open><summary>Decision reasons</summary><ul>{detail.recommendation.reasons.map((reason, index) => <li key={index}>{readable(reason)}</li>)}</ul></details>
+              {detail.recommendation.modelStatus === "fallback" && <details className="audit-details"><summary>Drafting availability</summary><p>{detail.recommendation.modelNotice || "Live OpenAI drafting is unavailable. Manual replies remain available."}</p></details>}
+            </section>}
+          </>
+        ) : tab === "evidence" ? (
           <>
             <section className="context-section">
               <div className="section-title">

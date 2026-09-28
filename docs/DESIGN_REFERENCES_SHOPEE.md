@@ -13,9 +13,13 @@ These references are not a pixel-level specification of the current localized Sh
 
 ## Apply to Escala
 
-- Persistent compact navigation for Inbox, Knowledge, and Activity; focus the initial MVP on Inbox.
+- Messaging-first Inbox navigation; supporting knowledge and activity are context tabs beside the active conversation.
 - Three work areas: prioritized queue, selected conversation/reply workspace, and evidence/order context. Keep queue search and status filters near the queue; put the action and risk explanation next to the draft.
 - Use clear hierarchy, predictable placement, concise labels, stable layouts, and reusable components. Make the next action and its evidence legible before decoration.
 - Use a warm orange accent as an Escala working token, restrained neutral surfaces, and semantic risk badges with text/icons (never color alone). Proposed palette values are design choices, not Shopee specifications.
 - Short transitions may clarify drawer/panel changes; honor `prefers-reduced-motion`. Avoid attention-grabbing animation for risk state.
 - On small screens, focus on one work area at a time and make queue/context available through accessible drawers.
+
+## Owner-directed messaging redesign (2026-09-28)
+
+The owner's warm graphite palette and Messenger/WhatsApp familiarity now govern the existing inbox. This is an Escala design direction, not a claim that these are Shopee tokens. Queue rows show latest messages with at most two status chips. Compact chat headers link to Analysis; buyer/seller bubbles remain distinct from unsent copilot drafts. The bottom composer has its own layout space while history, context and long copilot details scroll independently. System/Light/Dark preference uses shared CSS variables and the existing app shell. Exact palette values and verification limits are in README.

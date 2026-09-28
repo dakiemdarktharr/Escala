@@ -68,3 +68,9 @@ The existing service now follows analysis → operational next step/template or 
 `repository.ts` materializes seed buyer messages idempotently into the same Mongo database. `mongodb.ts` exposes the messages collection using shared types. `inbox-service.ts` stores replies/status/audit/unread atomically with sequence ordering and request-id retry protection. Original buyer analysis inputs remain unchanged. Existing inbox components render history, a suggestion panel, always-present composer, approval controls and audit provenance. No new frontend component or database system was added.
 
 No live OpenAI credentials were present: actual local UI uses reviewed templates with null confidence. Integration tests use an explicitly test-only Responses protocol stub to exercise real SDK handling and deterministic confidence/approval gates. This is not live generation validation. Future production sending requires authentication, authorization, connector delivery receipts and representative evaluation; none is implied by simulated delivery.
+
+## Messaging presentation (2026-09-28)
+
+Existing queue, thread, recommendation and context components own the three messaging work areas. History scrolls above a separate reply dock; context uses Analysis/Evidence/Activity tabs and the existing native dialog drawer. The app shell contains scrolling so keyboard focus does not displace the header or composer. Theme initialization lives in the existing root layout; the top-bar preference control updates shared CSS variables without another provider or dependency.
+
+Inbox display previews/timestamps now come from the last sequenced persisted message. Priority/tie sorting and inference still use the original buyer thread fields. A Mongo aggregation in the existing inbox service performs this projection; no new endpoint, collection or duplicated summary type was introduced. The in-memory sample client mirrors latest-message presentation without adding persistence.

@@ -194,7 +194,7 @@ export function TriageSignals({
           </span>
         )}
       </div>
-      <details className="priority-details">
+      <details className="priority-details" open>
         <summary>Priority, urgency & sentiment details</summary>
         <div className="triage-detail">
           <h3>Priority</h3>

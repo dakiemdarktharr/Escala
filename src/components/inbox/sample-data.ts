@@ -278,6 +278,8 @@ export function createSampleClient(): InboxClient {
       };
       if (recommendation) recommendation.status = "sent";
       item.messages.push(message);
+      item.thread.preview = message.text;
+      item.thread.updatedAt = createdAt;
       item.audit.push(audit);
       const result = { message, audit, recommendation };
       replies.set(input.requestId, structuredClone(result));

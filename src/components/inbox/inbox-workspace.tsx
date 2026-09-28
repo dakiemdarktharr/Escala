@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { InboxResponse } from "@/domain/contracts";
 import { Drawer } from "@/components/ui/drawer";
@@ -17,6 +17,40 @@ import { createSampleClient } from "./sample-data";
 import { ThreadWorkspace } from "./thread-workspace";
 
 type Mode = "api" | "sample";
+type ThemePreference = "system" | "light" | "dark";
+
+function getThemePreference(): ThemePreference {
+  const preference = document.documentElement.dataset.themePreference;
+  return preference === "light" || preference === "dark" ? preference : "system";
+}
+function applyTheme(preference: ThemePreference) {
+  const dark = preference === "dark" || (preference === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.documentElement.dataset.themePreference = preference;
+}
+function subscribeTheme(callback: () => void) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const update = () => { applyTheme(getThemePreference()); callback(); };
+  const storage = (event: StorageEvent) => {
+    if (event.key !== "escala-theme" && event.key !== null) return;
+    applyTheme(event.newValue === "light" || event.newValue === "dark" ? event.newValue : "system");
+    callback();
+  };
+  media.addEventListener("change", update);
+  window.addEventListener("escala-theme-change", update);
+  window.addEventListener("storage", storage);
+  return () => {
+    media.removeEventListener("change", update);
+    window.removeEventListener("escala-theme-change", update);
+    window.removeEventListener("storage", storage);
+  };
+}
+function changeTheme(preference: ThemePreference) {
+  applyTheme(preference);
+  try { localStorage.setItem("escala-theme", preference); } catch { /* Theme still works for this session. */ }
+  window.dispatchEvent(new Event("escala-theme-change"));
+}
+function getServerTheme(): ThemePreference { return "system"; }
 
 export function InboxWorkspace({
   initialMode = "api",
@@ -26,6 +60,7 @@ export function InboxWorkspace({
   initialThreadId?: string | null;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const theme = useSyncExternalStore(subscribeTheme, getThemePreference, getServerTheme);
   const [sampleClient] = useState(createSampleClient);
   const client = mode === "sample" ? sampleClient : apiClient;
   const [queue, setQueue] = useState<QueueState>({ status: "loading" });
@@ -33,7 +68,7 @@ export function InboxWorkspace({
   const [selectedId, setSelectedId] = useState<string | null>(initialThreadId);
   const [queueOpen, setQueueOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
-  const [contextTab, setContextTab] = useState<ContextTab>("evidence");
+  const [contextTab, setContextTab] = useState<ContextTab>("analysis");
   const [drafts, setDrafts] = useState<
     Record<string, { text: string; recommendationId?: string }>
   >({});
@@ -148,14 +183,6 @@ export function InboxWorkspace({
     setRefreshing(true);
     void loadQueue(queue.status === "ready");
   }
-  function showContext(tab: ContextTab) {
-    setContextTab(tab);
-    if (window.matchMedia("(max-width: 1199px)").matches) setContextOpen(true);
-    else
-      document
-        .querySelector<HTMLButtonElement>(".desktop-context [role=tab]")
-        ?.focus();
-  }
   const queueProps = {
     state: queue,
     selectedId,
@@ -188,14 +215,25 @@ export function InboxWorkspace({
           </span>
         </Link>
         <span className="topbar-divider" />
-        <span className="workspace-label">Seller workspace</span>
+        <h1 className="workspace-label" id="inbox-heading" tabIndex={-1}>Inbox</h1>
+        {counts && <span className="topbar-count">{counts.needsReview} need review</span>}
         <div className="topbar-actions">
+          <label className="theme-picker">
+            <Icon name={theme === "dark" ? "moon" : theme === "light" ? "sun" : "monitor"} size={16} />
+            <span className="sr-only">Color theme</span>
+            <select aria-label="Color theme" value={theme} onChange={(event) => changeTheme(event.target.value as ThemePreference)}>
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
           <span className="environment-label">
             <span className="environment-dot" />
             {mode === "sample" ? "Sample preview" : "Synthetic workspace"}
           </span>
           <button
             className="mode-switch"
+            aria-label={mode === "sample" ? "Connect workspace" : "Sample preview"}
             onClick={() => changeMode(mode === "sample" ? "api" : "sample")}
           >
             <Icon name={mode === "sample" ? "inbox" : "file"} size={15} />
@@ -213,77 +251,7 @@ export function InboxWorkspace({
         </div>
       </header>
       <div className="shell-body">
-        <nav className="navigation-rail" aria-label="Workspace">
-          <button
-            className="rail-item active"
-            onClick={() => {
-              if (window.matchMedia("(max-width: 899px)").matches)
-                setQueueOpen(true);
-              else document.getElementById("inbox-heading")?.focus();
-            }}
-            aria-current="page"
-          >
-            <Icon name="inbox" size={22} />
-            <span>Inbox</span>
-          </button>
-          <button
-            className="rail-item"
-            onClick={() => showContext("evidence")}
-            disabled={!selectedId}
-            title="Evidence for selected conversation"
-          >
-            <Icon name="book" size={22} />
-            <span>Evidence</span>
-          </button>
-          <button
-            className="rail-item"
-            onClick={() => showContext("activity")}
-            disabled={!selectedId}
-            title="Activity for selected conversation"
-          >
-            <Icon name="history" size={22} />
-            <span>Activity</span>
-          </button>
-          <div className="rail-bottom">
-            <span className="rail-safety">
-              <Icon name="shield" size={21} />
-            </span>
-            <span>
-              Seller
-              <br />
-              in control
-            </span>
-          </div>
-        </nav>
         <main className="workspace" id="workspace" tabIndex={-1}>
-          <div className="workspace-heading">
-            <div>
-              <h1 id="inbox-heading" tabIndex={-1}>
-                Inbox
-              </h1>
-              <p>A clear next step for every conversation.</p>
-            </div>
-            <div className="inbox-summary">
-              {counts && (
-                <>
-                  <span>
-                    <strong>{counts.needsReview}</strong> need review
-                  </span>
-                  <span className="urgent-count">
-                    <span aria-hidden="true" />
-                    {counts.urgent} urgent
-                  </span>
-                </>
-              )}
-              <button
-                className="button secondary mobile-queue-toggle"
-                onClick={() => setQueueOpen(true)}
-              >
-                <Icon name="menu" size={17} />
-                Conversations
-              </button>
-            </div>
-          </div>
           <div
             className={`workspace-banner${mode === "sample" ? " sample-banner" : ""}`}
           >

@@ -7,11 +7,7 @@ import {
   Avatar,
   dateLabel,
   EmptyState,
-  LevelBadge,
   LoadingState,
-  PriorityBadge,
-  readable,
-  SentimentBadge,
 } from "./presentation";
 
 export type QueueState =
@@ -88,7 +84,7 @@ export function ConversationQueue({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search buyers, messages, orders"
+            placeholder="Search conversations"
             autoComplete="off"
           />
         </div>
@@ -129,7 +125,7 @@ export function ConversationQueue({
           : state.status === "loading"
             ? "Opening your inbox"
             : "Connection needs attention"}
-        <span>Workspace order</span>
+        <span>Prioritized</span>
       </div>
       <div className="queue-scroll">
         {state.status === "loading" ? (
@@ -184,12 +180,13 @@ export function ConversationQueue({
             {matches.map((thread) => (
               <li key={thread.id}>
                 <button
-                  className={`case-row${selectedId === thread.id ? " is-selected" : ""}`}
+                  className={`case-row${selectedId === thread.id ? " is-selected" : ""}${thread.unread ? " is-unread" : ""}`}
                   onClick={() => onSelect(thread.id)}
                   aria-current={selectedId === thread.id ? "true" : undefined}
                 >
+                  <Avatar name={thread.buyerName} />
+                  <div className="case-body">
                   <div className="case-top">
-                    <Avatar name={thread.buyerName} small />
                     <span className="case-name">{thread.buyerName}</span>
                     <time
                       dateTime={thread.updatedAt}
@@ -204,20 +201,12 @@ export function ConversationQueue({
                     )}
                   </div>
                   <p className="case-preview">{thread.preview}</p>
-                  <div className="case-tags">
-                    <PriorityBadge score={thread.priorityScore} />
-                    <LevelBadge level={thread.urgency} kind="urgency" />
-                  </div>
-                  <div className="case-tags">
-                    {thread.sentiment && (
-                      <SentimentBadge sentiment={thread.sentiment} />
-                    )}
+                  {(thread.urgency === "high" || thread.requiresAction) && <div className="case-tags">
+                    {thread.urgency === "high" && <span className="badge level-high">Urgent</span>}
                     {thread.requiresAction === true && (
-                      <span className="badge action-needed">Needs action</span>
+                      <span className="badge action-needed">Needs review</span>
                     )}
-                    <span className="case-intent">
-                      {readable(thread.intent)}
-                    </span>
+                  </div>}
                   </div>
                 </button>
               </li>

@@ -16,7 +16,9 @@ import {
   EmptyState,
   LoadingState,
   Notice,
-  TriageSignals,
+  PriorityBadge,
+  readable,
+  SentimentBadge,
 } from "./presentation";
 import { RecommendationPanel } from "./recommendation-panel";
 
@@ -67,6 +69,18 @@ export function ThreadWorkspace({
   const pendingReply = useRef<{ signature: string; requestId: string } | null>(null);
   const draftKey = `${sample ? "sample" : "api"}:${id}:reply`;
   const composer = drafts[draftKey] ?? { text: "" };
+  const historyRef = useRef<HTMLDivElement>(null);
+  const lastMessageId = state.status === "ready" ? state.detail.messages.at(-1)?.id : undefined;
+  useEffect(() => {
+    const history = historyRef.current;
+    if (history) history.scrollTop = history.scrollHeight;
+  }, [lastMessageId]);
+
+  function viewAnalysis() {
+    onContextTab("analysis");
+    if (window.matchMedia("(max-width: 1199px)").matches) onContextOpen();
+    else requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".desktop-context [role=tab][aria-selected=true]")?.focus());
+  }
 
   function updateComposer(text: string, recommendationId = composer.recommendationId) {
     onDraftChange(draftKey, { text, recommendationId });
@@ -309,27 +323,18 @@ export function ThreadWorkspace({
               Synthetic inbox
             </span>
           </div>
-          <button
-            className="icon-button context-toggle"
-            onClick={onContextOpen}
-            aria-label="Open evidence and activity"
-          >
-            <Icon name="book" />
-          </button>
-          <span className="desktop-thread-meta">
-            <Icon name="shield" size={15} />
-            Seller workspace
-          </span>
+          <button className="button secondary analysis-toggle" onClick={viewAnalysis}><Icon name="info" size={16} />View analysis</button>
+          <div className="thread-summary" aria-label="Buyer message summary">
+            <PriorityBadge score={thread.priorityScore} />
+            {thread.sentiment && <SentimentBadge sentiment={thread.sentiment} />}
+            <span className="summary-intent" title={readable(thread.intent)}>{readable(thread.intent)}</span>
+          </div>
         </header>
-        <div className="thread-scroll">
-          <TriageSignals thread={thread} sample={sample} />
+        <div className="thread-scroll" ref={historyRef} tabIndex={0} aria-label="Conversation history">
           <section
             className="conversation-section"
             aria-label="Message history"
           >
-            <div className="conversation-date">
-              <span>{dateLabel(thread.updatedAt, true)}</span>
-            </div>
             {detail.messages.length === 0 ? (
               <EmptyState title="No messages in this thread">
                 Refresh the inbox to check for new conversation content.
@@ -349,7 +354,7 @@ export function ThreadWorkspace({
                             : "Seller"}
                         </span>
                         <time dateTime={message.createdAt}>
-                          {dateLabel(message.createdAt)}
+                          {dateLabel(message.createdAt, true)}
                         </time>
                       </div>
                     )}
@@ -365,10 +370,9 @@ export function ThreadWorkspace({
               </ol>
             )}
           </section>
-          <div className="review-divider">
-            <Icon name="spark" size={15} />
-            <span>From conversation to next step</span>
-          </div>
+        </div>
+        <div className="reply-dock">
+          <div className="copilot-scroll">
           {generateError && <Notice variant="error">{generateError}</Notice>}
           {generating && (
             <Notice>
@@ -376,7 +380,7 @@ export function ThreadWorkspace({
               You can keep reviewing the conversation.
             </Notice>
           )}
-          {recommendation ? (
+          {recommendation?.draft?.trim() && (!recommendation.status || recommendation.status === "pending") ? (
             <RecommendationPanel
               key={recommendation.id}
               recommendation={recommendation}
@@ -391,18 +395,10 @@ export function ThreadWorkspace({
               sample={sample}
             />
           ) : (
-            <div className="recommendation-start">
-              <span className="recommendation-symbol">
-                <Icon name="spark" size={24} />
-              </span>
-              <h3>A considered next step.</h3>
-              <p>
-                Prepare a recommendation using this conversation and the
-                seller’s knowledge. You’ll see its reasons before making a
-                decision.
-              </p>
+            <div className="copilot-idle">
+              <span><Icon name={recommendation?.status === "sent" ? "check" : "spark"} size={15} />{recommendation?.status === "sent" ? "Suggestion sent" : recommendation?.status === "declined" ? "Suggestion declined" : "Seller copilot"}</span>
               <button
-                className="button primary"
+                className="text-button"
                 onClick={generate}
                 disabled={generating || saving}
               >
@@ -412,14 +408,15 @@ export function ThreadWorkspace({
                   size={17}
                 />
                 {generating
-                  ? "Preparing recommendation…"
-                  : "Prepare recommendation"}
+                  ? "Preparing…"
+                  : "Suggest a reply"}
               </button>
-              <p className="no-send-note">No buyer message will be sent.</p>
+              {recommendation?.modelStatus === "fallback" && <details className="copilot-details"><summary>Drafting availability</summary><p>{recommendation.modelNotice || "Live OpenAI drafting is unavailable. You can write your own reply below."}</p></details>}
             </div>
           )}
+          </div>
           <section className="reply-composer" aria-labelledby={`${composerId}-heading`}>
-            <h3 id={`${composerId}-heading`}>Reply to buyer</h3>
+            <h3 className="sr-only" id={`${composerId}-heading`}>Reply to buyer</h3>
             <div className="draft-editor">
               <div className="editor-label">
                 <label htmlFor={composerId}>{composer.recommendationId ? "Edit suggested reply" : "Your reply"}</label>
@@ -429,27 +426,29 @@ export function ThreadWorkspace({
                   setSaveError(null);
                 }}>Discard draft</button>}
               </div>
-              <textarea id={composerId} value={composer.text} onChange={(event) => updateComposer(event.target.value)} rows={4} maxLength={2000} placeholder="Write your reply to the buyer…" disabled={saving} aria-describedby={`${composerId}-help`} />
-              <p className="editor-footnote" id={`${composerId}-help`}>Replies are saved in this conversation with simulated delivery. No refund, cancellation, payment or other order action is performed.</p>
+              <textarea id={composerId} value={composer.text} onChange={(event) => updateComposer(event.target.value)} rows={2} maxLength={2000} placeholder="Write a message…" disabled={saving} aria-describedby={`${composerId}-help`} onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  if (!saving && !generating && composer.text.trim() && (!needsApproval || approved)) void sendReply(composer.text, composer.recommendationId, "seller", approved);
+                }
+              }} />
             </div>
             {needsApproval && <label className="reply-approval"><input type="checkbox" checked={approved} onChange={(event) => setApproved(event.target.checked)} disabled={saving} />I approve sending this reply about a sensitive action.</label>}
-            {saveError && <Notice variant="error">{saveError} Your reply is retained.</Notice>}
-            {success && <Notice variant="success">{success}</Notice>}
-            <div className="decision-actions"><button className="button primary" disabled={saving || generating || !composer.text.trim() || (needsApproval && !approved)} onClick={() => sendReply(composer.text, composer.recommendationId, "seller", approved)}>{saving ? "Sending…" : needsApproval ? "Approve & send reply" : "Send reply"}</button></div>
+            {(saveError || success) && <div className="composer-feedback">{saveError ? <Notice variant="error">{saveError} Your reply is retained.</Notice> : <Notice variant="success">{success}</Notice>}</div>}
+            <div className="composer-footer">
+              <p id={`${composerId}-help`}><span>Enter for a new line · Ctrl/⌘ Enter to send</span><span>Simulated delivery · no order changes</span></p>
+              <button className="button primary" disabled={saving || generating || !composer.text.trim() || (needsApproval && !approved)} onClick={() => sendReply(composer.text, composer.recommendationId, "seller", approved)}><Icon name="send" size={16} />{saving ? "Sending…" : needsApproval ? "Approve & send" : "Send"}</button>
+            </div>
           </section>
-          <p className="thread-bottom-note">
-            <Icon name="shield" size={14} />
-            Your judgment, backed by evidence.
-          </p>
         </div>
       </section>
-      <aside className="desktop-context" aria-label="Evidence and activity">
+      <aside className="desktop-context" aria-label="Analysis, evidence and activity">
         {context}
       </aside>
       <Drawer
         open={contextOpen}
         onClose={onContextClose}
-        title="Evidence & activity"
+        title="Conversation context"
       >
         {context}
       </Drawer>

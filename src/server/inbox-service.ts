@@ -77,12 +77,12 @@ function publicAudit(event: StoredAudit): AuditRecord {
   };
 }
 
-function asSummary(record: SyntheticThreadRecord): InboxThreadSummary {
+function asSummary(record: SyntheticThreadRecord, latestMessage?: MessageRecord): InboxThreadSummary {
   return {
     id: record.id,
     buyerName: record.buyerName,
-    preview: record.preview,
-    updatedAt: record.updatedAt,
+    preview: latestMessage?.text ?? record.preview,
+    updatedAt: latestMessage?.createdAt ?? record.updatedAt,
     unread: record.unread,
     intent: record.intent,
     urgency: record.urgency,
@@ -120,7 +120,20 @@ export async function listInbox(): Promise<InboxResponse> {
     .toArray();
   const audits = await (await getAuditCollection()).find({ type: "seller_decision" } as never).toArray() as StoredAudit[];
   const reviewed = new Set(audits.map((event) => event.threadId));
-  const summaries = threads.map(asSummary).sort((a, b) => (b.priorityScore ?? 0) - (a.priorityScore ?? 0) || b.updatedAt.localeCompare(a.updatedAt));
+  const latest = await (await getMessagesCollection()).aggregate<{ _id: string; message: MessageRecord }>([
+    { $match: { threadId: { $in: threads.map((thread) => thread.id) } } },
+    { $sort: { sequence: -1, _id: -1 } },
+    { $group: { _id: "$threadId", message: { $first: "$$ROOT" } } },
+  ]).toArray();
+  const lastMessages = new Map(latest.map((row) => [row._id, row.message]));
+  // Retain buyer-based priority/tie order. Only the visible preview and time
+  // follow conversation history; neither becomes an analysis input.
+  const summaries = threads.map((thread) => asSummary(thread))
+    .sort((a, b) => (b.priorityScore ?? 0) - (a.priorityScore ?? 0) || b.updatedAt.localeCompare(a.updatedAt))
+    .map((summary) => {
+      const message = lastMessages.get(summary.id);
+      return message ? { ...summary, preview: message.text, updatedAt: message.createdAt } : summary;
+    });
   return {
     threads: summaries,
     counts: {
@@ -150,7 +163,7 @@ export async function getThreadDetail(threadId: string): Promise<ThreadDetailRes
   const recommendation = storedRecommendation ? publicRecommendation(storedRecommendation) : null;
 
   return {
-    thread: asSummary(thread),
+    thread: asSummary(thread, messages.at(-1)),
     messages: messages.map(({ _id: ignored, ...message }) => { void ignored; return message; }),
     order: fixture.scenario === "high_risk_payment"
       ? { orderId: "8831", status: "Seller review needed", productName: "Blue Linen Shirt", quantity: 1, paymentStatus: "Buyer reports a duplicate charge; not verified" }

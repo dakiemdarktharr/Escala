@@ -39,9 +39,40 @@ npm test
 
 Without that flag, the HTTP test is explicitly skipped. The real-model test is also explicitly skipped if model assets are missing. Integration tests use an isolated temporary MongoDB replica set, never your Atlas database, and use a local OpenAI Responses protocol stub for confidence/adapter tests; no real OpenAI calls are made.
 
+## Messaging interface and themes
+
+The existing inbox now uses a conversation list, active chat and context sidebar. Queue rows show the latest persisted message/time, unread state and at most two status indicators. The compact header keeps priority, sentiment and intent visible; View analysis opens full buyer-message analysis, evidence, policy and audit details. Queue ordering and original buyer analysis inputs remain unchanged.
+
+Message history scrolls separately from the bottom reply dock. Buyer bubbles are neutral and left-aligned; sent seller bubbles use a soft brand tint on the right. The copilot suggestion sits above the always-visible multiline composer. Its draft is distinct from sent messages, with review/approval controls retained. Edit preserves suggestion provenance, manual replies remain available, and Ctrl/Cmd+Enter sends only when the same approval checks permit the Send button. Enter makes a new line. Longer suggestions/details use progressive disclosure rather than replacing the chat.
+
+The top-bar Color theme control offers System, Light and Dark. Preference persists in localStorage (`escala-theme`); System follows OS changes. An inline script in the existing root layout applies the resolved theme before body paint. Storage failures leave a working session theme. The existing CSS variables define both palettes; no theme dependency/provider or second design system was added.
+
+| Token role | Light | Dark |
+| --- | --- | --- |
+| Background | #F7F7F5 | #0F1115 |
+| Primary surface | #FFFFFF | #161A20 |
+| Secondary surface | #F1F2F4 | #1C222B |
+| Raised surface | Secondary surface | #222936 |
+| Border | #E5E7EB | #2C3442 |
+| Primary text | #111827 | #F3F4F6 |
+| Secondary text | #6B7280 | #9CA3AF |
+| Brand | #F05A28 | #FF6B3D |
+| Brand hover | #D94E21 | #FF7C54 |
+| Soft brand tint | #FFF1EB | Low-opacity brand mix |
+| Information | #2563EB | #60A5FA |
+| Review/warning | #D97706 | #FBBF24 |
+| Risk/negative | #DC2626 | #F87171 |
+| Success/positive | #16A34A | #4ADE80 |
+
+Semantic colors appear in small labeled indicators, icons and subtle tints. Large surfaces stay neutral. Contrast variants handle small text; primary orange buttons use readable foregrounds. Existing queue/context drawers support narrower screens without duplicating the inbox. Models, confidence thresholds, deterministic risk rules and priority weights were not redesigned.
+
+Browser verification for this redesign covered light/dark preference and reload persistence, System resolution against the current OS preference, conversation switching, urgent and negative cases, order/evidence/context tabs, edited and manual multiline sends, sensitive-action approval, original/final audit text, long-message wrapping and independently scrolling copilot details. CSS viewports 1440×900, 900×650, and 390×600 were exercised. Local production delivery remained simulated. Screenshots are saved in ignored `.local/verification/messaging-{light,dark,mobile}.png`.
+
+Remaining limits: local suggestions are reviewed templates with unavailable confidence because no OpenAI key was configured. Live AI and actual marketplace sends were not tested. Physical-device keyboard behavior, comprehensive assistive-technology testing and confidence calibration still need evaluation. Very short windows prioritize the composer and can require scrolling within the copilot. Theme bootstrap reduces wrong-theme flash; a content-security policy that blocks inline scripts would need a nonce or hash. The in-app browser's screenshot capture showed scaling/clipping artifacts; DOM geometry and interactive checks verified layout/controls, but those images are imperfect visual evidence.
+
 ## Seller reply workflow
 
-Every conversation has a manual reply composer. Prepare recommendation shows an operational next step (for example, Review refund request), a buyer-facing draft, independent risk/confidence, evidence, source and delivery state. Send suggested reply saves a safe reviewed response; Approve & send records explicit authorization for a sensitive reply. Edit loads the original suggestion into the composer, Discard draft removes the association, and Decline leaves manual replies available. Replies are simulated and stored in the existing MongoDB database, then displayed in history across refresh/restart. No order action is performed.
+Every conversation has a manual reply composer. Suggest a reply shows an operational next step (for example, Review refund request), a buyer-facing draft, independent risk/confidence, evidence, source and delivery state. Send suggestion saves a safe reviewed response; Approve & send records explicit authorization for a sensitive reply. Edit loads the original suggestion into the composer, Discard draft removes the association, and Decline leaves manual replies available. Replies are simulated and stored in the existing MongoDB database, then displayed in history across refresh/restart. No order action is performed.
 
 `AUTO_SEND` means eligible, not already sent. The demo's Simulate automatic send control exercises the same authoritative reply route in automatic mode. It requires a successful live candidate, known intent, exact reviewed wording, complete evidence and confidence >= `ESCALA_CONFIDENCE_THRESHOLD` (default 0.90). Free-form/high-confidence alone does not pass grounding. `APPROVAL_REQUIRED` always blocks automatic mode; `REVIEW_REQUIRED` keeps low/unavailable-confidence suggestions visible. `MANUAL_ONLY` represents no usable suggestion. See [POLICY.md](docs/POLICY.md).
 

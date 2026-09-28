@@ -119,6 +119,10 @@ test("Escala reply workflow persists history/audit and enforces server-side poli
     assert.equal(manual.status, 200);
     assert.equal(manual.data.audit.reply.source, "manual");
     assert.equal(manual.data.recommendation, null);
+    const latestInbox = (await request("/api/inbox")).data;
+    assert.equal(latestInbox.threads.find((thread) => thread.id === manualId).preview, manual.data.message.text);
+    assert.equal(latestInbox.threads.find((thread) => thread.id === manualId).updatedAt, manual.data.message.createdAt);
+    assert.equal((await database.collection("threads").findOne({ id: manualId })).preview, "cảm ơn shop nha hàng đẹp lắm");
     assert.equal((await reply(manualId, { requestId, text: "Cảm ơn bạn nhé!" })).data.message.id, manual.data.message.id);
     assert.equal((await reply(manualId, { requestId, text: "Other reply" })).status, 409);
     assert.equal((await reply(manualId, { text: "We will refund your payment." })).data.error.code, "APPROVAL_REQUIRED");

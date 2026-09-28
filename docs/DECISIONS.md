@@ -110,3 +110,32 @@ Full suite with integration: **60 passed, zero skipped**; lint/typecheck/build a
 Actual browser checks opened all requested messages, sent safe suggestions, approved sensitive replies, edited text, declined/overrode a suggestion, sent a manual Vietnamese reply without a recommendation, and confirmed reload persistence and original/final audit display. The existing demo MongoDB was retained during server restart, preserving earlier seller events. Local template confidence is null and the exact missing key is shown.
 
 English source SHA256 remains `fe9f3a0ce17660e048ada03c4db1f26063e9ff6ff8f6657d16df5230a8993dba`; ONNX SHA256 remains `a532971e33c196e4298c0a262553071f1e96ecd879f8c97c18e9b78fe4460aa1`. No sentiment training/weight changes. No Atlas, production connector, public multi-user deployment or live OpenAI evaluation claimed. Risk/intent/claim checks are limited phrases and templates, model confidence is uncalibrated, and arbitrary free-form replies require seller review. Seller approval sends only simulated communication; it never executes refunds/orders.
+
+## 2026-09-28 — Messaging-first inbox and warm graphite themes
+
+Refactored only the cloned Escala app. The existing responsibility map was inspected and given before implementation: queue → `conversation-queue.tsx`; shell/theme → `inbox-workspace.tsx`, root layout and shared CSS; header/history/composer → `thread-workspace.tsx`; copilot → `recommendation-panel.tsx`; analysis/evidence/activity → `context-panel.tsx`. No parallel app/component tree, new dependency, copied model, database or API.
+
+### Existing files modified
+
+- `src/app/layout.tsx`: pre-paint theme bootstrap.
+- `src/components/inbox/inbox-workspace.tsx`: compact Inbox shell, accessible System/Light/Dark preference, OS/storage listeners; existing queue/context drawers.
+- `conversation-queue.tsx`: avatars, latest preview/time, unread state and at most two chips.
+- `thread-workspace.tsx`: compact summary/View analysis, left/right message bubbles, separate scrolling history and copilot above persistent multiline composer; Enter newline and Ctrl/Cmd+Enter gated send.
+- `recommendation-panel.tsx`: compact draft/source/review/approval card, retained send/edit/decline/regenerate/automatic eligibility controls with details disclosure.
+- `context-panel.tsx`, `presentation.tsx`: Analysis/Evidence/Activity tabs, routing/source/confidence/priority explanations plus policy and provenance retained.
+- `sample-data.ts`: latest-message preview/time in the existing in-memory sample client.
+- `src/components/ui/icon.tsx`: theme/send icons in the existing icon owner.
+- `src/styles/globals.css`: one light/dark token stylesheet, neutral surfaces, semantic text/tints, anchored shell, independent scroll areas and responsive drawers. Contained visually hidden unread labels to prevent focus-induced ancestor scrolling. Contrast variants cover small text on secondary surfaces and orange hover buttons.
+- `src/server/inbox-service.ts`: last sequenced message projection for visible preview/time; original buyer fields and priority/tie order preserved.
+- `tests/inbox-integration.test.mjs`: latest preview/time and preserved buyer-input regression assertions.
+- `README.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_REFERENCES_SHOPEE.md`, this log: ownership, tokens, interaction behavior and verification limits.
+
+### Verification and limits
+
+No new tracked files. Lint/typecheck/production build and 17-message/7-document validation passed. Full regression suite: **60 passed, zero failed or skipped**. Existing real Mongo/HTTP tests protect persistence across restart, approval/confidence/grounding gates, original/final edit audit, retry behavior, model labels and unchanged priority.
+
+Actual browser checks used local production Next.js and synthetic MongoDB: light/dark persisted across reload, System matched the current OS preference, queue switching, urgent buyer D, negative shipment and hostile Vietnamese refund, positive Vietnamese feedback, factual neutral wrong size, order 8831/evidence, original/final edited-suggestion audit, multiline manual send, direct reviewed-template send, approved sensitive acknowledgement, disabled unapproved Ctrl+Enter and decline. Long repeated prose and an unbroken reference wrapped without horizontal overflow; history and expanded copilot details scrolled while the composer stayed visible. Context drawer/Escape and mobile queue selection worked at 900×650 and 390×600; Send remained within 390×400. Temporary viewport overrides were reset. Screenshot evidence is ignored local verification output, not another UI implementation.
+
+The earlier ephemeral preview MongoDB had expired when work resumed; the preview was reseeded using existing repository code into a local replica set with persistent files under ignored `.local/demo-mongo`. Browser replies persisted across Next.js restarts/reloads. No remote database or external message delivery was used. The in-app screenshot capture produced scaling/clipping artifacts, including text cutouts and unused margins. Read-only DOM geometry confirmed anchored headers, controls within the viewport and no message horizontal overflow; screenshot evidence is imperfect and needs a clean capture on the target device for final visual signoff.
+
+English source and ONNX hashes remain unchanged (listed above); no retraining, policy-engine or priority-weight edits. Live OpenAI is unavailable locally; reviewed templates show null confidence. Numerical low/high confidence paths use the existing explicitly test-only Responses protocol stub. Physical mobile keyboards, full assistive-technology coverage, real customer evaluation and live connectors remain unverified. Very short windows can require scrolling within copilot details; the manual composer retains precedence.
