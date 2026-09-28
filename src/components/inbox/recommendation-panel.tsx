@@ -57,7 +57,9 @@ export function RecommendationPanel({
     onDecision(
       clarification
         ? { decision: "ask_clarification", editedDraft: draft.trim() }
-        : dirty || !recommendation.draft
+        : dirty ||
+            !recommendation.draft ||
+            recommendation.action === "DRAFT_FOR_SELLER"
           ? { decision: "edit", editedDraft: draft.trim() }
           : { decision: "approve" },
     );
@@ -92,8 +94,8 @@ export function RecommendationPanel({
         <span>
           {Number.isFinite(recommendation.confidence) &&
           recommendation.confidence !== null
-            ? `${Math.round(recommendation.confidence * 100)}% ${sample ? "sample" : "model"} confidence`
-            : "Confidence unavailable"}
+            ? `${Math.round(recommendation.confidence * 100)}% ${sample ? "sample recommendation" : "recommendation"} confidence`
+            : "Recommendation confidence unavailable"}
         </span>
         <span>
           {recommendation.evidence.length} evidence{" "}
@@ -186,7 +188,9 @@ export function RecommendationPanel({
                   ? "Record clarification"
                   : dirty || !recommendation.draft
                     ? "Save edited draft"
-                    : "Record approval"}
+                    : recommendation.action === "DRAFT_FOR_SELLER"
+                      ? "Save reviewed draft"
+                      : "Record approval"}
           </button>
         )}
         {needsEscalation || escalating || !canSaveDraft ? (

@@ -13,10 +13,9 @@ import {
   Avatar,
   dateLabel,
   EmptyState,
-  LevelBadge,
   LoadingState,
   Notice,
-  readable,
+  TriageSignals,
 } from "./presentation";
 import { RecommendationPanel } from "./recommendation-panel";
 
@@ -154,7 +153,7 @@ export function ThreadWorkspace({
             : input.decision === "ask_clarification"
               ? "Clarification recorded in the activity log. No message was sent."
               : input.decision === "edit"
-                ? "Edited draft recorded in the activity log. No message was sent."
+                ? "Reviewed draft recorded in the activity log. No message was sent."
                 : "Approval recorded in the activity log. No message was sent.",
         );
       }
@@ -255,27 +254,7 @@ export function ThreadWorkspace({
           </span>
         </header>
         <div className="thread-scroll">
-          <div className="priority-strip">
-            <LevelBadge level={thread.urgency} kind="priority" />
-            <span>
-              {thread.urgencyReasons[0]
-                ? readable(thread.urgencyReasons[0])
-                : "Review the conversation to decide what comes next."}
-            </span>
-          </div>
-          {thread.urgencyReasons.length > 1 && (
-            <details className="priority-details">
-              <summary>Why this priority?</summary>
-              <ul>
-                {thread.urgencyReasons.map((reason, index) => (
-                  <li key={`${reason}-${index}`}>{readable(reason)}</li>
-                ))}
-              </ul>
-              <p>
-                Priority is a prototype ranking, separate from business risk.
-              </p>
-            </details>
-          )}
+          <TriageSignals thread={thread} sample={sample} />
           <section
             className="conversation-section"
             aria-label="Message history"

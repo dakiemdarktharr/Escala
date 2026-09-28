@@ -588,6 +588,7 @@ svg {
 .case-tags {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
@@ -730,6 +731,45 @@ svg {
 .priority-details p {
   margin-top: 7px;
   color: #66717e;
+}
+.triage-signals {
+  padding: 11px;
+  border: 1px solid #efeff1;
+  border-radius: 5px;
+  background: #fdfdfd;
+}
+.triage-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.priority-score {
+  background: #edf0f8;
+  color: #465c86;
+}
+.sentiment-negative {
+  background: #fbecee;
+  color: #a53642;
+}
+.sentiment-positive {
+  background: #edf6ef;
+  color: #277253;
+}
+.sentiment-neutral,
+.sentiment-unknown,
+.action-needed {
+  background: #f0f3f7;
+  color: #52677b;
+}
+.triage-detail {
+  margin-top: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.triage-detail h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #454d58;
 }
 .conversation-date {
   display: flex;

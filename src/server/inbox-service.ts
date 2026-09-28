@@ -24,9 +24,11 @@ import {
   APPROVED_AVAILABILITY_ANSWER,
   detectHardRisk,
   evaluateRecommendation,
+  detectIntent,
+  refreshPriority,
 } from "./policy.mjs";
 
-const POLICY_VERSION = "escala-policy-1.0";
+const POLICY_VERSION = "escala-policy-2.0";
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.9;
 const RETRIEVE_LIMIT = 4;
 let initializationPromise: Promise<void> | null = null;
@@ -78,6 +80,12 @@ function asSummary(record: SyntheticThreadRecord): InboxThreadSummary {
     intent: record.intent,
     urgency: record.urgency,
     urgencyReasons: record.urgencyReasons,
+    sentiment: record.sentiment,
+    priorityScore: record.priorityScore,
+    priorityReasons: record.priorityReasons,
+    priorityFlag: record.priorityFlag,
+    requiresAction: record.requiresAction,
+    ...refreshPriority(record, record.updatedAt),
     ...(record.scenario === "high_risk_payment" ? { orderId: "8831", productName: "Blue Linen Shirt" } : {}),
   };
 }
@@ -105,7 +113,7 @@ export async function listInbox(): Promise<InboxResponse> {
     .toArray();
   const audits = await (await getAuditCollection()).find({ type: "seller_decision" } as never).toArray() as StoredAudit[];
   const reviewed = new Set(audits.map((event) => event.threadId));
-  const summaries = threads.map(asSummary);
+  const summaries = threads.map(asSummary).sort((a, b) => (b.priorityScore ?? 0) - (a.priorityScore ?? 0) || b.updatedAt.localeCompare(a.updatedAt));
   return {
     threads: summaries,
     counts: {
@@ -129,8 +137,7 @@ export async function getThreadDetail(threadId: string): Promise<ThreadDetailRes
   ]);
   const fixture = fixtures.find((item) => item.threadId === threadId);
   if (!fixture) throw new ServiceError(404, "THREAD_NOT_FOUND", "Conversation not found.");
-  const evidenceIds = new Set((fixture as typeof fixture & { expectedEvidenceIds?: string[] }).expectedEvidenceIds ?? []);
-  const evidence = knowledge.filter((item) => evidenceIds.has(item.id)).map(toEvidence);
+  const evidence = retrieveEvidence(fixture.text, knowledge);
   const storedRecommendation = (recommendations[0] as StoredRecommendation | undefined) ?? null;
   const recommendation = storedRecommendation
     ? Object.fromEntries(
@@ -154,6 +161,19 @@ export async function getThreadDetail(threadId: string): Promise<ThreadDetailRes
     recommendation,
     audit: (audit as StoredAudit[]).map(publicAudit),
   };
+}
+
+function retrieveEvidence(text: string, knowledge: KnowledgeBaseRecord[]): EvidenceRecord[] {
+  const intent = detectIntent(text);
+  const ids = new Set<string>();
+  if (/blue linen shirt/i.test(text)) ids.add("kb-product-blue-linen-shirt-v1");
+  if (/standard delivery|shipping|delivery|giao hang/i.test(text)) ids.add("kb-shipping-standard-v1");
+  if (intent === "product_and_shipping_faq") ids.add("kb-approved-answer-availability-v1");
+  if (intent === "return_or_exchange" || ["wrong_item", "damaged_item"].includes(intent)) ids.add("kb-returns-exchange-v1");
+  if (["refund", "payment_dispute_and_refund"].includes(intent)) ids.add("kb-payment-review-v1");
+  if (detectHardRisk(text).hard) ids.add("kb-seller-constraints-v1");
+  if (/cotton tote|spot.clean|washable/i.test(text)) ids.add("kb-store-faq-v1");
+  return knowledge.filter((item) => item.status === "ACTIVE" && ids.has(item.id)).slice(0, RETRIEVE_LIMIT).map(toEvidence);
 }
 
 interface ModelCandidate {
@@ -209,12 +229,11 @@ export async function createRecommendation(threadId: string): Promise<{ recommen
   const fixture = fixtures.find((item) => item.threadId === threadId);
   if (!fixture) throw new ServiceError(404, "THREAD_NOT_FOUND", "Conversation not found.");
   const knowledge = await (await getKnowledgeBaseCollection()).find({ status: "ACTIVE" }).toArray();
-  const expectedEvidenceIds = new Set((fixture as typeof fixture & { expectedEvidenceIds?: string[] }).expectedEvidenceIds ?? []);
-  const evidence = knowledge.filter((item) => expectedEvidenceIds.has(item.id)).slice(0, RETRIEVE_LIMIT).map(toEvidence);
+  const evidence = retrieveEvidence(fixture.text, knowledge);
   const risks = detectHardRisk(fixture.text, fixture.scenario);
   const reasons = [...risks.reasons];
   let action: RecommendationAction;
-  let intent = fixture.expectedIntent ?? "unknown";
+  let intent = thread.intent;
   let confidence: number | null = null;
   let draft: string | null = null;
   let modelStatus: RecommendationRecord["modelStatus"] = "fallback";
@@ -259,6 +278,7 @@ export async function createRecommendation(threadId: string): Promise<{ recommen
         evidenceIds: candidateEvidence,
         threshold,
         hasApprovedAnswer,
+        sentiment: thread.sentiment,
       });
       action = decision.action;
       reasons.push(...decision.reasons);
@@ -281,7 +301,7 @@ export async function createRecommendation(threadId: string): Promise<{ recommen
 
   const now = new Date().toISOString();
   const recommendation: RecommendationRecord = {
-    id: randomUUID(), threadId, action, intent, risk: thread.urgency, confidence, draft,
+    id: randomUUID(), threadId, action, intent, risk: risks.hard ? "high" : ["product_and_shipping_faq", "stock_check", "shipping_faq", "product_information", "positive_feedback"].includes(intent) ? "low" : "medium", confidence, draft,
     reasons, evidence, policyVersion: POLICY_VERSION, modelStatus,
     ...(modelNotice ? { modelNotice } : {}), createdAt: now,
   };
@@ -310,6 +330,9 @@ export async function recordSellerDecision(
   const collection = await getRecommendationsCollection();
   const recommendation = await collection.findOne({ id: recommendationId } as never) as StoredRecommendation | null;
   if (!recommendation) throw new ServiceError(404, "RECOMMENDATION_NOT_FOUND", "Recommendation not found.");
+  if ((recommendation.action === "ESCALATE" || recommendation.risk === "high") && input.decision !== "escalate") {
+    throw new ServiceError(409, "REVIEW_BLOCKED", "This risky recommendation must be escalated; a reply decision is blocked.");
+  }
   if (input.decision === "approve" && recommendation.action !== "AUTO_REPLY") {
     throw new ServiceError(409, "APPROVAL_BLOCKED", "This recommendation requires seller review and cannot be approved.");
   }

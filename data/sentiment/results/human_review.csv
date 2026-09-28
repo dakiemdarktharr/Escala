@@ -1,0 +1,13 @@
+row_id,current_label,original_split,text,review_reason
+old:11,negative,train,I paid for the bundle but the extra strap isn't in the box. Can you sort this out?,Factual missing-item report labeled negative under old policy; likely neutral under strict policy.
+old:15,negative,train,There's no adapter in the box. I can't use it like this.,Factual missing-adapter report labeled negative; action need is separate from sentiment.
+old:20,negative,train,The cup came broken. There wasn't any padding in the box either.,"Broken item and missing padding, but no explicit emotion; could be neutral factual report."
+old:31,negative,train,ordered last Monday and it still says preparing. is this actually going out?,Delayed order reported as negative without clear dissatisfaction wording.
+new:346,negative,,"Great, the one color I didn't order is the one that arrived.",Sarcastic positive opener; human confirmation of tone would help.
+new:352,negative,,"Nice, I paid extra to watch the parcel sit at the depot for a week.",Sarcastic complaint; human confirmation of tone would help.
+new:356,negative,,Love the gift box with a shipping label stuck right across it.,Sarcastic complaint; review whether intended negative tone is unambiguous.
+new:357,negative,,"Fantastic, a two-piece set with only one piece in the parcel.",Sarcastic complaint; human confirmation of tone would help.
+new:98,neutral,,I selected pay on delivery. Why is it asking for a card now?,Neutral payment-method question misclassified as negative by the candidate; confirm strict-policy label.
+new:289,negative,,I expected better than stitching that comes apart in one wash.,Explicit criticism misclassified as positive by the candidate; confirm negative label.
+new:75,neutral,,"It says delivered, but I haven't found the package yet.",Factual missing-package report misclassified as negative by the baseline; confirm neutral label.
+new:77,neutral,,The courier page hasn't moved for four days.,Factual tracking report misclassified as negative by the baseline; confirm neutral label.

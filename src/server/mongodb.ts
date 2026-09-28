@@ -3,21 +3,15 @@ import type { Collection, Db } from "mongodb";
 import type {
   AuditRecord,
   RecommendationRecord,
-  RiskLevel,
+  InboxThreadSummary,
 } from "@/domain/contracts";
 
 /** A synthetic inbox thread persisted for the demo seed. */
-export interface SyntheticThreadRecord {
-  id: string;
-  buyerName: string;
-  preview: string;
-  updatedAt: string;
-  unread: boolean;
-  intent: string;
-  urgency: RiskLevel;
-  urgencyReasons: string[];
+export interface SyntheticThreadRecord extends InboxThreadSummary {
   scenario: string;
   channel: string;
+  analysisVersion?: string;
+  analyzedAt?: string;
 }
 
 /** A synthetic knowledge-base entry persisted for the demo seed. */

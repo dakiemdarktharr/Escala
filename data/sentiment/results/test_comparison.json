@@ -1,0 +1,303 @@
+{
+  "test_count": 75,
+  "test_manifest_sha256": "4c6d7a7091e44cac909de479dc0d31288aa1e6f665bc9f99847fe8f4ede8a745",
+  "baseline_checkpoint": "..\\checkpoints\\baseline_legacy_653",
+  "baseline_weights_sha256": "b673a80956431fea323dd6b9f6703e40cc2ac1b31360f8c8c31aea3efc1fcd0b",
+  "candidate_checkpoint": "data\\models\\english\\source",
+  "candidate_weights_sha256": "fe9f3a0ce17660e048ada03c4db1f26063e9ff6ff8f6657d16df5230a8993dba",
+  "baseline": {
+    "confusion_matrix_labels": [
+      "negative",
+      "neutral",
+      "positive"
+    ],
+    "confusion_matrix": [
+      [
+        14,
+        0,
+        4
+      ],
+      [
+        8,
+        31,
+        0
+      ],
+      [
+        0,
+        0,
+        18
+      ]
+    ],
+    "per_class": {
+      "negative": {
+        "precision": 0.6364,
+        "recall": 0.7778,
+        "f1": 0.7,
+        "support": 18
+      },
+      "neutral": {
+        "precision": 1.0,
+        "recall": 0.7949,
+        "f1": 0.8857,
+        "support": 39
+      },
+      "positive": {
+        "precision": 0.8182,
+        "recall": 1.0,
+        "f1": 0.9,
+        "support": 18
+      }
+    },
+    "macro_f1": 0.8286,
+    "accuracy": 0.84,
+    "slices": {
+      "factual_problem_neutral": {
+        "size": 11,
+        "correct": 5,
+        "accuracy": 0.4545,
+        "row_ids": [
+          "new:40",
+          "new:75",
+          "new:77",
+          "new:79",
+          "new:86",
+          "new:108",
+          "new:129",
+          "new:132",
+          "new:139",
+          "new:174",
+          "new:179"
+        ]
+      },
+      "explicit_negative": {
+        "size": 13,
+        "correct": 13,
+        "accuracy": 1.0,
+        "row_ids": [
+          "new:267",
+          "new:272",
+          "new:276",
+          "new:302",
+          "new:309",
+          "new:321",
+          "new:338",
+          "new:339",
+          "new:343",
+          "new:369",
+          "new:373",
+          "new:377",
+          "new:380"
+        ]
+      },
+      "clear_sarcasm_negative": {
+        "size": 3,
+        "correct": 0,
+        "accuracy": 0.0,
+        "row_ids": [
+          "new:352",
+          "new:356",
+          "new:360"
+        ]
+      }
+    },
+    "errors": [
+      {
+        "row_id": "new:75",
+        "text": "It says delivered, but I haven't found the package yet.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.9415
+      },
+      {
+        "row_id": "new:77",
+        "text": "The courier page hasn't moved for four days.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.9222
+      },
+      {
+        "row_id": "new:79",
+        "text": "My tracking link opens, but there's no scan history.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.7999
+      },
+      {
+        "row_id": "new:86",
+        "text": "I checked with reception and they don't have it either.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.9095
+      },
+      {
+        "row_id": "new:98",
+        "text": "I selected pay on delivery. Why is it asking for a card now?",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.967
+      },
+      {
+        "row_id": "new:129",
+        "text": "The clock loses a few minutes each day.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.5441
+      },
+      {
+        "row_id": "new:179",
+        "text": "The label was stuck directly on the product box.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.7665
+      },
+      {
+        "row_id": "new:218",
+        "text": "The second package arrived separately, like you said.",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.8303
+      },
+      {
+        "row_id": "new:289",
+        "text": "I expected better than stitching that comes apart in one wash.",
+        "true": "negative",
+        "predicted": "positive",
+        "confidence": 0.6712
+      },
+      {
+        "row_id": "new:352",
+        "text": "Nice, I paid extra to watch the parcel sit at the depot for a week.",
+        "true": "negative",
+        "predicted": "positive",
+        "confidence": 0.888
+      },
+      {
+        "row_id": "new:356",
+        "text": "Love the gift box with a shipping label stuck right across it.",
+        "true": "negative",
+        "predicted": "positive",
+        "confidence": 0.9814
+      },
+      {
+        "row_id": "new:360",
+        "text": "Awesome, another day off work waiting for a courier who never came.",
+        "true": "negative",
+        "predicted": "positive",
+        "confidence": 0.933
+      }
+    ]
+  },
+  "candidate": {
+    "confusion_matrix_labels": [
+      "negative",
+      "neutral",
+      "positive"
+    ],
+    "confusion_matrix": [
+      [
+        17,
+        0,
+        1
+      ],
+      [
+        1,
+        38,
+        0
+      ],
+      [
+        0,
+        0,
+        18
+      ]
+    ],
+    "per_class": {
+      "negative": {
+        "precision": 0.9444,
+        "recall": 0.9444,
+        "f1": 0.9444,
+        "support": 18
+      },
+      "neutral": {
+        "precision": 1.0,
+        "recall": 0.9744,
+        "f1": 0.987,
+        "support": 39
+      },
+      "positive": {
+        "precision": 0.9474,
+        "recall": 1.0,
+        "f1": 0.973,
+        "support": 18
+      }
+    },
+    "macro_f1": 0.9681,
+    "accuracy": 0.9733,
+    "slices": {
+      "factual_problem_neutral": {
+        "size": 11,
+        "correct": 11,
+        "accuracy": 1.0,
+        "row_ids": [
+          "new:40",
+          "new:75",
+          "new:77",
+          "new:79",
+          "new:86",
+          "new:108",
+          "new:129",
+          "new:132",
+          "new:139",
+          "new:174",
+          "new:179"
+        ]
+      },
+      "explicit_negative": {
+        "size": 13,
+        "correct": 13,
+        "accuracy": 1.0,
+        "row_ids": [
+          "new:267",
+          "new:272",
+          "new:276",
+          "new:302",
+          "new:309",
+          "new:321",
+          "new:338",
+          "new:339",
+          "new:343",
+          "new:369",
+          "new:373",
+          "new:377",
+          "new:380"
+        ]
+      },
+      "clear_sarcasm_negative": {
+        "size": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "row_ids": [
+          "new:352",
+          "new:356",
+          "new:360"
+        ]
+      }
+    },
+    "errors": [
+      {
+        "row_id": "new:98",
+        "text": "I selected pay on delivery. Why is it asking for a card now?",
+        "true": "neutral",
+        "predicted": "negative",
+        "confidence": 0.9978
+      },
+      {
+        "row_id": "new:289",
+        "text": "I expected better than stitching that comes apart in one wash.",
+        "true": "negative",
+        "predicted": "positive",
+        "confidence": 0.8831
+      }
+    ]
+  },
+  "limits": "Synthetic assistant-reviewed data; small slices, especially sarcasm. Metrics are not real-shop accuracy estimates."
+}

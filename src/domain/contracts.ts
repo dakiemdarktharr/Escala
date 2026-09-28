@@ -1,6 +1,14 @@
 /** Shared wire contracts for the Escala MVP API and seller inbox UI. */
 
 export type RiskLevel = "low" | "medium" | "high";
+export interface SentimentAnalysis {
+  label: "negative" | "neutral" | "positive" | "unknown";
+  confidence: number | null;
+  source: "local_english_model" | "vietnamese_rules" | "unavailable";
+  language: "english" | "vietnamese" | "mixed";
+  modelId?: string;
+  notice?: string;
+}
 export type RecommendationAction =
   | "AUTO_REPLY"
   | "DRAFT_FOR_SELLER"
@@ -16,6 +24,11 @@ export interface InboxThreadSummary {
   intent: string;
   urgency: RiskLevel;
   urgencyReasons: string[];
+  sentiment?: SentimentAnalysis;
+  requiresAction?: boolean;
+  priorityScore?: number;
+  priorityReasons?: string[];
+  priorityFlag?: "abusive_language" | "direct_money_demand" | null;
   orderId?: string;
   productName?: string;
 }

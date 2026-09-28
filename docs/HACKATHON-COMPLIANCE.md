@@ -2,6 +2,8 @@
 
 ## New-build declaration
 
+**2026-09-28 development update:** The owner explicitly authorized migrating useful Shop Signal reference logic, synthetic sentiment datasets/results, and a trained English checkpoint into this cloned Escala codebase. That local development now reuses those artifacts; the earlier blanket statement of no prior-artifact reuse is no longer an accurate description of this working tree. No DOCRELAY/SAND source or assets were imported. This migration is recorded as development work, not a claim of a from-scratch hackathon submission or verified event eligibility.
+
 Escala is a new product build created in this workspace for the Sea × OpenAI Regional Codex Hackathon — Vietnam 2026. The workspace began with the Escala handoff document and no application commits.
 
 The implementation, UI, data, workflow details, prompts, schemas, and demo will be created for Escala during the event. The team may use prior experience to inform engineering judgment, but will not reuse existing project artifacts.

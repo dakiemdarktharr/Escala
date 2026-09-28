@@ -1,0 +1,76 @@
+row_id,text,true,issue_type,baseline,baseline_confidence,candidate,candidate_confidence
+new:4,Is the strap adjustable on this bag?,neutral,product_question,neutral,0.9922,neutral,0.9993
+new:12,Is the fabric stretchy at all?,neutral,product_question,neutral,0.9919,neutral,0.9993
+new:13,What's the heel height on these?,neutral,product_question,neutral,0.99,neutral,0.9991
+new:15,Can the shelves be adjusted or are they fixed?,neutral,product_question,neutral,0.9919,neutral,0.9993
+new:22,Is the beige more yellow or more pink in person?,neutral,product_question,neutral,0.9913,neutral,0.9992
+new:40,My order was for the floral print; the parcel has the solid blue one.,neutral,wrong_variant,neutral,0.7855,neutral,0.9992
+new:49,I entered my old apartment number. Can I update it before dispatch?,neutral,order_change,neutral,0.9908,neutral,0.9993
+new:56,Can I add a note for the recipient before you pack it?,neutral,order_change,neutral,0.9921,neutral,0.9993
+new:69,Can I cancel a preorder from yesterday?,neutral,cancellation,neutral,0.9925,neutral,0.9993
+new:72,"Hi, tracking hasn't updated since Tuesday. Can you look into it?",neutral,shipping_delay,neutral,0.9821,neutral,0.9991
+new:75,"It says delivered, but I haven't found the package yet.",neutral,shipping_delay,negative,0.9415,neutral,0.9991
+new:77,The courier page hasn't moved for four days.,neutral,shipping_delay,negative,0.9222,neutral,0.9989
+new:79,"My tracking link opens, but there's no scan history.",neutral,shipping_delay,negative,0.7999,neutral,0.9989
+new:85,The parcel is at the local hub now. Do I need to collect it?,neutral,shipping_delay,neutral,0.9915,neutral,0.9992
+new:86,I checked with reception and they don't have it either.,neutral,shipping_delay,negative,0.9095,neutral,0.9988
+new:89,One of the two boxes arrived. Is the other on a separate tracking link?,neutral,shipping_delay,neutral,0.9921,neutral,0.9993
+new:98,I selected pay on delivery. Why is it asking for a card now?,neutral,payment,negative,0.967,negative,0.9978
+new:108,One corner of the frame is cracked.,neutral,damage,neutral,0.6098,neutral,0.9991
+new:129,The clock loses a few minutes each day.,neutral,product_quality,negative,0.5441,neutral,0.9989
+new:132,The lamp flickers whenever I touch the switch.,neutral,product_quality,neutral,0.9626,neutral,0.9992
+new:139,"After changing the batteries, the display is still blank.",neutral,product_quality,neutral,0.8164,neutral,0.9991
+new:142,What is the return window for shoes bought online?,neutral,refund_return,neutral,0.9901,neutral,0.999
+new:150,I sent it back on Monday. Has the return reached you?,neutral,refund_return,neutral,0.9901,neutral,0.9993
+new:159,I no longer have the sleeve it came in. Can I still return it?,neutral,refund_return,neutral,0.9563,neutral,0.9992
+new:162,Is the photo showing the two-piece set or just the top?,neutral,listing_mismatch,neutral,0.9917,neutral,0.9993
+new:174,I checked the link again; it still says the adapter is included.,neutral,listing_mismatch,neutral,0.8078,neutral,0.9992
+new:179,The label was stuck directly on the product box.,neutral,packaging,negative,0.7665,neutral,0.9992
+new:180,There was tape across the gift box. Can I get a replacement box?,neutral,packaging,neutral,0.9897,neutral,0.9993
+new:189,The parcel was resealed with clear tape. Can you verify it before I use it?,neutral,packaging,neutral,0.9904,neutral,0.9993
+new:197,The order ID is in the screenshot above.,neutral,seller_response,neutral,0.9646,neutral,0.9992
+new:201,The app isn't letting me attach a second photo. Is email okay?,neutral,seller_response,neutral,0.9168,neutral,0.9974
+new:208,The payment went through on the second attempt.,neutral,resolution,neutral,0.8591,neutral,0.9992
+new:210,The size chart loaded after I refreshed the page.,neutral,resolution,neutral,0.9774,neutral,0.9992
+new:218,"The second package arrived separately, like you said.",neutral,resolution,negative,0.8303,neutral,0.9988
+new:221,"I got the exchange email, so I'll send the first pair back.",neutral,resolution,neutral,0.9033,neutral,0.9991
+new:228,Can I collect the order from your store instead?,neutral,other,neutral,0.9912,neutral,0.9993
+new:238,I'll use the pickup option you mentioned earlier.,neutral,other,neutral,0.9636,neutral,0.999
+new:245,Is the small size still in stock?,neutral,product_question,neutral,0.9914,neutral,0.9992
+new:250,Would the same screws fit the larger shelf?,neutral,product_question,neutral,0.9908,neutral,0.9992
+new:267,"I paid for the larger size, and getting the small one is unacceptable.",negative,wrong_variant,negative,0.9755,negative,0.9977
+new:272,I'm upset that half the set is missing after I paid for all of it.,negative,missing_item,negative,0.977,negative,0.9978
+new:274,I reported the missing strap last week. Why am I still chasing this?,negative,missing_item,negative,0.9746,negative,0.9978
+new:276,Really poor packing to leave out the screws for a table.,negative,missing_item,negative,0.9464,negative,0.9976
+new:289,I expected better than stitching that comes apart in one wash.,negative,product_quality,positive,0.6712,positive,0.8831
+new:302,I'm frustrated that I paid for express and it still hasn't shipped.,negative,shipping_delay,negative,0.9754,negative,0.9979
+new:309,I took time off for the delivery twice. This is frustrating.,negative,shipping_delay,negative,0.9729,negative,0.9979
+new:321,I can't believe checkout took my money without creating an order.,negative,payment,negative,0.9755,negative,0.9976
+new:338,This whole process has been needlessly stressful.,negative,service_feedback,negative,0.9716,negative,0.9977
+new:339,It's careless to ship glass in a bag with no padding.,negative,packaging,negative,0.954,negative,0.9976
+new:343,This is such a hassle over a simple purchase.,negative,other,negative,0.8548,negative,0.9972
+new:352,"Nice, I paid extra to watch the parcel sit at the depot for a week.",negative,shipping_delay,positive,0.888,negative,0.996
+new:356,Love the gift box with a shipping label stuck right across it.,negative,packaging,positive,0.9814,negative,0.5008
+new:360,"Awesome, another day off work waiting for a courier who never came.",negative,shipping_delay,positive,0.933,negative,0.9974
+new:369,I like the item; the way it was packed was unacceptable.,negative,packaging,negative,0.9642,negative,0.9975
+new:373,"You were helpful before, but being ignored now is really irritating.",negative,seller_response,negative,0.9698,negative,0.9973
+new:377,"The package arrived fast, but finding a dented item inside was upsetting.",negative,damage,negative,0.9726,negative,0.9977
+new:380,Not happy at all with how flimsy this feels.,negative,product_quality,negative,0.9253,negative,0.9965
+new:383,"These earrings are even prettier in person, thank you!",positive,product_feedback,positive,0.9883,positive,0.9987
+new:392,I'm so happy with the print quality on this shirt.,positive,product_feedback,positive,0.9812,positive,0.9987
+new:394,These sheets are really soft. Glad I ordered them.,positive,product_feedback,positive,0.9854,positive,0.9986
+new:402,The bottle doesn't leak at all. Really pleased with it.,positive,product_feedback,positive,0.9584,positive,0.9986
+new:412,This is my second order of the same socks. They're great.,positive,product_feedback,positive,0.9872,positive,0.9987
+new:413,The mirror was easy to hang and looks really nice.,positive,product_feedback,positive,0.9811,positive,0.9986
+new:415,The fit is perfect and the material feels so nice.,positive,product_feedback,positive,0.9808,positive,0.9987
+new:417,The planter is exactly the size I needed. So happy with it.,positive,product_feedback,positive,0.9852,positive,0.9987
+new:423,The cake stand is beautiful. Can't wait to use it.,positive,product_feedback,positive,0.979,positive,0.9982
+new:426,The watch band looks great and was easy to attach.,positive,product_feedback,positive,0.9782,positive,0.9986
+new:433,You were really helpful picking out the right adapter.,positive,service_feedback,positive,0.9811,positive,0.9985
+new:434,Really appreciate you letting me know the brown one was back in stock before I checked out.,positive,service_feedback,positive,0.9847,positive,0.9985
+new:450,That was much easier than I expected. Thanks for helping.,positive,service_feedback,positive,0.9878,positive,0.9987
+new:452,You were right about the fit. Really helpful advice.,positive,service_feedback,positive,0.9842,positive,0.9986
+new:459,The missing piece arrived today. Really appreciate your help.,positive,resolution,positive,0.9873,positive,0.9986
+new:492,The gift wrapping looked beautiful. Thank you!,positive,service_feedback,positive,0.9884,positive,0.9986
+new:494,Super quick delivery and the box was in perfect shape.,positive,service_feedback,positive,0.9772,positive,0.9983
+new:501,Really happy with the service from start to finish.,positive,service_feedback,positive,0.9838,positive,0.9986

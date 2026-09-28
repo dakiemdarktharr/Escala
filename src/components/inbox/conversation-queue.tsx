@@ -9,7 +9,9 @@ import {
   EmptyState,
   LevelBadge,
   LoadingState,
+  PriorityBadge,
   readable,
+  SentimentBadge,
 } from "./presentation";
 
 export type QueueState =
@@ -127,7 +129,7 @@ export function ConversationQueue({
           : state.status === "loading"
             ? "Opening your inbox"
             : "Connection needs attention"}
-        <span>Priority order</span>
+        <span>Workspace order</span>
       </div>
       <div className="queue-scroll">
         {state.status === "loading" ? (
@@ -203,7 +205,16 @@ export function ConversationQueue({
                   </div>
                   <p className="case-preview">{thread.preview}</p>
                   <div className="case-tags">
-                    <LevelBadge level={thread.urgency} kind="priority" />
+                    <PriorityBadge score={thread.priorityScore} />
+                    <LevelBadge level={thread.urgency} kind="urgency" />
+                  </div>
+                  <div className="case-tags">
+                    {thread.sentiment && (
+                      <SentimentBadge sentiment={thread.sentiment} />
+                    )}
+                    {thread.requiresAction === true && (
+                      <span className="badge action-needed">Needs action</span>
+                    )}
                     <span className="case-intent">
                       {readable(thread.intent)}
                     </span>

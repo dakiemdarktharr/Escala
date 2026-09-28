@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Collection } from "mongodb";
-import type { RiskLevel } from "@/domain/contracts";
+import { analyzeSentiment } from "./sentiment.mjs";
+import { ANALYSIS_VERSION, analyzeTriage } from "./policy.mjs";
 import {
   getAuditCollection,
   getKnowledgeBaseCollection,
@@ -42,19 +43,17 @@ export function getDemoMessages(): Promise<DemoMessageFixture[]> {
   return messageFixturesPromise;
 }
 
-function toThread(fixture: DemoMessageFixture): SyntheticThreadRecord {
-  const urgency = fixture.expectedUrgency?.toLowerCase();
+async function toThread(fixture: DemoMessageFixture): Promise<SyntheticThreadRecord> {
+  const sentiment = await analyzeSentiment(fixture.text);
   return {
     id: fixture.threadId,
     buyerName: fixture.customerLabel,
     preview: fixture.text,
     updatedAt: fixture.receivedAt,
     unread: true,
-    intent: fixture.expectedIntent ?? "unknown",
-    urgency: (urgency === "low" || urgency === "medium" || urgency === "high"
-      ? urgency
-      : "low") as RiskLevel,
-    urgencyReasons: fixture.expectedUrgencyReasons ?? [],
+    ...analyzeTriage(fixture.text, sentiment, fixture.receivedAt),
+    analysisVersion: ANALYSIS_VERSION,
+    analyzedAt: new Date().toISOString(),
     scenario: fixture.scenario,
     channel: fixture.channel,
   };
@@ -98,14 +97,32 @@ export async function seedDatabase(): Promise<{ threads: number; knowledgeBase: 
 
   const knowledgeBase = JSON.parse(knowledgeRaw) as KnowledgeBaseRecord[];
 
-  const threads = messages.map(toThread);
+  const collection = await getThreadsCollection();
+  const existingIds = new Set((await collection.find({}, { projection: { id: 1 } }).toArray()).map((thread) => thread.id));
+  const threads: SyntheticThreadRecord[] = [];
+  // Sequential CPU inference avoids loading a second model or oversubscribing memory.
+  for (const message of messages) if (!existingIds.has(message.threadId)) threads.push(await toThread(message));
 
   const [threadsCount, knowledgeCount] = await Promise.all([
-    upsertById(await getThreadsCollection(), threads),
+    upsertById(collection, threads),
     upsertById(await getKnowledgeBaseCollection(), knowledgeBase),
   ]);
 
   return { threads: threadsCount, knowledgeBase: knowledgeCount };
+}
+
+/** Explicit migration: recompute cached analysis, retaining message and seller state. */
+export async function refreshThreadAnalyses(): Promise<number> {
+  const collection = await getThreadsCollection();
+  const threads = await collection.find({}).toArray();
+  for (const thread of threads) {
+    const sentiment = await analyzeSentiment(thread.preview);
+    await collection.updateOne({ id: thread.id }, { $set: {
+      ...analyzeTriage(thread.preview, sentiment, thread.updatedAt),
+      analysisVersion: ANALYSIS_VERSION, analyzedAt: new Date().toISOString(),
+    } });
+  }
+  return threads.length;
 }
 
 export {

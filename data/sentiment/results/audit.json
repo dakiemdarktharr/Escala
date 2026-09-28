@@ -1,0 +1,81 @@
+{
+  "old_count": 653,
+  "new_count": 500,
+  "old_labels": {
+    "negative": 216,
+    "neutral": 222,
+    "positive": 215
+  },
+  "new_labels": {
+    "neutral": 260,
+    "negative": 120,
+    "positive": 120
+  },
+  "old_splits": {
+    "train": 522,
+    "dev": 131
+  },
+  "raw_sha256": {
+    "old": "beb44ba5ab20d6262d9b0b0dcbd43c47f69215c3ce4de169ffdfe8e8178eb087",
+    "new": "cf04c5741bf159bc5e36ffa599ca8dff74e2e827a808ed67099bbfc65f1f7e42"
+  },
+  "old_invalid": [],
+  "new_invalid": [],
+  "exact_pair_count": 0,
+  "near_pair_count": 1,
+  "conflicting_pair_count": 0,
+  "cross_batch_pair_count": 1,
+  "split_counts": {
+    "validation": 75,
+    "train": 349,
+    "test": 75,
+    "exclude": 1
+  },
+  "split_labels": {
+    "train": {
+      "neutral": 181,
+      "negative": 84,
+      "positive": 84
+    },
+    "validation": {
+      "neutral": 39,
+      "negative": 18,
+      "positive": 18
+    },
+    "test": {
+      "neutral": 39,
+      "negative": 18,
+      "positive": 18
+    },
+    "exclude": {
+      "neutral": 1
+    }
+  },
+  "exclusion_reasons": {
+    "near_duplicate_of_old_data": 1
+  },
+  "human_review_count": 12,
+  "review_statuses": {
+    "old": {
+      "assistant_reviewed": 649,
+      "reviewed": 4
+    },
+    "new": {
+      "assistant_reviewed": 500
+    }
+  },
+  "source_values": {
+    "old": {
+      "synthetic": 653
+    },
+    "new": {
+      "synthetic": 500
+    }
+  },
+  "notes": [
+    "assistant_reviewed is an assistant review marker, not real-customer verification.",
+    "Old labels used a different policy and old rows are excluded from candidate training.",
+    "Near duplicate means normalized text similarity >=0.87 with token overlap or token Jaccard >=0.82.",
+    "Any new group near an old row is excluded from train/validation/test to protect the final comparison."
+  ]
+}

@@ -56,6 +56,8 @@ Used for hard-risk, unsupported, contradictory, out-of-scope, or side-effect cas
 
 ## Urgency explanation
 
+As of policy `escala-policy-2.0`, the runtime UI distinguishes temporal urgency from business risk and queue priority. Explicit deadlines/time pressure raise urgency. A refund's financial risk does not itself invent a deadline. Cached intent, negative sentiment, abusive-language/direct-demand flags, and waiting time raise attention priority with visible reasons. Refund and order-action rules still block automation, including accented and unaccented Vietnamese. Unknown or negative sentiment cannot grant automatic replies, and an invalid/below-0.90 configured threshold fails closed. Seller reply decisions on high-risk/escalated recommendations are rejected by the API; escalation remains available.
+
 The prototype ranks urgency from visible signals:
 
 - delivery or response deadline;

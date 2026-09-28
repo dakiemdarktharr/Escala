@@ -3,6 +3,7 @@ import knowledge from "../../../data/demo/knowledge-base.json";
 import type {
   AuditRecord,
   EvidenceRecord,
+  InboxThreadSummary,
   RecommendationAction,
   RiskLevel,
   ThreadDetailResponse,
@@ -25,6 +26,15 @@ const sampleRisk: Record<string, RiskLevel> = {
   complaint_escalation: "high",
   missing_evidence: "medium",
   model_failure: "low",
+};
+const samplePriority: Record<string, number> = {
+  safe_faq: 20,
+  ambiguous: 45,
+  high_risk_payment: 95,
+  urgent_deadline: 85,
+  complaint_escalation: 80,
+  missing_evidence: 40,
+  model_failure: 25,
 };
 const sampleNames = [
   "Minh Anh",
@@ -52,15 +62,38 @@ function fixtures(): ThreadDetailResponse[] {
           source:
             entry.type === "product_facts" ? "product_faq" : "seller_policy",
         }));
-      const thread = {
+      const timeSensitive = [
+        "high_risk_payment",
+        "urgent_deadline",
+        "complaint_escalation",
+      ].includes(message.scenario);
+      const thread: InboxThreadSummary = {
         id: message.threadId,
         buyerName: sampleNames[index],
         preview: message.text,
         updatedAt: receivedAt,
         unread: true,
         intent: message.expectedIntent || "unknown",
-        urgency: message.expectedUrgency.toLowerCase() as RiskLevel,
-        urgencyReasons: message.expectedUrgencyReasons,
+        urgency: timeSensitive ? "high" : "low",
+        urgencyReasons: [
+          message.scenario === "high_risk_payment"
+            ? "Buyer asks for a response immediately."
+            : message.scenario === "urgent_deadline"
+              ? "Buyer states a deadline of 5 PM tomorrow."
+              : message.scenario === "complaint_escalation"
+                ? "Buyer requests cancellation today."
+                : "No explicit deadline in the sample message.",
+        ],
+        priorityScore: samplePriority[message.scenario],
+        priorityReasons: message.expectedUrgencyReasons,
+        requiresAction: true,
+        sentiment: {
+          label: "unknown",
+          confidence: null,
+          source: "unavailable",
+          language: "english",
+          notice: "Sample preview does not run sentiment analysis.",
+        },
         ...(message.scenario === "high_risk_payment"
           ? { orderId: "8831", productName: "Blue Linen Shirt" }
           : {}),
@@ -123,8 +156,7 @@ function fixtures(): ThreadDetailResponse[] {
     })
     .sort(
       (a, b) =>
-        ({ high: 0, medium: 1, low: 2 })[a.thread.urgency] -
-        { high: 0, medium: 1, low: 2 }[b.thread.urgency],
+        (b.thread.priorityScore ?? 0) - (a.thread.priorityScore ?? 0),
     );
 }
 

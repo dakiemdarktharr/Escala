@@ -1,4 +1,9 @@
-import type { RecommendationAction, RiskLevel } from "@/domain/contracts";
+import type {
+  InboxThreadSummary,
+  RecommendationAction,
+  RiskLevel,
+  SentimentAnalysis,
+} from "@/domain/contracts";
 import { Icon, type IconName } from "@/components/ui/icon";
 
 export const actionLabels: Record<RecommendationAction, string> = {
@@ -51,7 +56,7 @@ export function LevelBadge({
   kind,
 }: {
   level: RiskLevel;
-  kind: "risk" | "priority";
+  kind: "risk" | "urgency";
 }) {
   return (
     <span className={`badge level-${level} badge-${kind}`}>
@@ -129,5 +134,126 @@ export function LoadingState({ compact = false }: { compact?: boolean }) {
         </div>
       ))}
     </div>
+  );
+}
+
+const sentimentSources: Record<SentimentAnalysis["source"], string> = {
+  local_english_model: "Local English model",
+  vietnamese_rules: "Vietnamese rules",
+  unavailable: "Unavailable",
+};
+const languageLabels: Record<SentimentAnalysis["language"], string> = {
+  english: "English",
+  vietnamese: "Vietnamese",
+  mixed: "Mixed language",
+};
+
+export function PriorityBadge({ score }: { score?: number }) {
+  return (
+    <span className="badge priority-score">
+      Priority{" "}
+      {score !== undefined && Number.isFinite(score) ? score : "unavailable"}
+    </span>
+  );
+}
+
+export function SentimentBadge({ sentiment }: { sentiment: SentimentAnalysis }) {
+  return (
+    <span className={`badge sentiment-${sentiment.label}`}>
+      {sentiment.label === "unknown"
+        ? "Sentiment unknown"
+        : `${readable(sentiment.label.toUpperCase())} sentiment`}
+    </span>
+  );
+}
+
+export function TriageSignals({
+  thread,
+  sample,
+}: {
+  thread: InboxThreadSummary;
+  sample: boolean;
+}) {
+  const { sentiment } = thread;
+  const confidence = sentiment?.confidence;
+  const hasConfidence =
+    sentiment &&
+    sentiment.source !== "unavailable" &&
+    confidence != null &&
+    Number.isFinite(confidence);
+
+  return (
+    <section className="triage-signals" aria-label="Conversation triage signals">
+      <div className="triage-summary">
+        <PriorityBadge score={thread.priorityScore} />
+        <LevelBadge level={thread.urgency} kind="urgency" />
+        {sentiment && <SentimentBadge sentiment={sentiment} />}
+        {thread.requiresAction !== undefined && (
+          <span className="badge action-needed">
+            {thread.requiresAction ? "Needs action" : "No action flagged"}
+          </span>
+        )}
+      </div>
+      <details className="priority-details">
+        <summary>Priority, urgency & sentiment details</summary>
+        <div className="triage-detail">
+          <h3>Priority</h3>
+          {thread.priorityReasons?.length ? (
+            <ul>
+              {thread.priorityReasons.map((reason, index) => (
+                <li key={`${reason}-${index}`}>{readable(reason)}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No priority factors are available for this conversation.</p>
+          )}
+          {thread.priorityFlag && <p>Flag: {readable(thread.priorityFlag)}</p>}
+          <p>
+            Priority ranks attention using visible factors. It is a prototype
+            score, separate from time urgency and recommendation risk.
+          </p>
+          {sample && <p>Fixed illustrative priority; no ranking model was run.</p>}
+        </div>
+        <div className="triage-detail">
+          <h3>Time urgency</h3>
+          {thread.urgencyReasons.length ? (
+            <ul>
+              {thread.urgencyReasons.map((reason, index) => (
+                <li key={`${reason}-${index}`}>{readable(reason)}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No timing factors were returned.</p>
+          )}
+        </div>
+        <div className="triage-detail">
+          <h3>Sentiment</h3>
+          {sentiment ? (
+            <>
+              <p>
+                Route: {languageLabels[sentiment.language]} · Source:{" "}
+                {sentimentSources[sentiment.source]}
+              </p>
+              {sentiment.modelId && <p>Model: {sentiment.modelId}</p>}
+              <p>
+                {hasConfidence
+                  ? `${Math.round(confidence * 100)}% sentiment ${sentiment.source === "vietnamese_rules" ? "rule confidence (uncalibrated)" : "model confidence"}.`
+                  : "Sentiment confidence unavailable."}{" "}
+                {sentiment.source === "vietnamese_rules"
+                  ? "Vietnamese rule labels have no calibrated probability of correctness."
+                  : sentiment.source === "local_english_model"
+                    ? "The English model score does not establish accuracy on these buyer messages."
+                    : "No trained sentiment result is available."}
+              </p>
+              {sentiment.notice && <p>{sentiment.notice}</p>}
+            </>
+          ) : (
+            <p>Sentiment was not analyzed for this conversation.</p>
+          )}
+          <p>Sentiment confidence is separate from recommendation confidence.</p>
+          {sample && <p>Sample preview only. No sentiment model was run.</p>}
+        </div>
+      </details>
+    </section>
   );
 }

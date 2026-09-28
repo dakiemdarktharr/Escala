@@ -12,3 +12,7 @@ coverage/
 receipts/
 review-receipts/
 .claude/settings.local.json
+data/models/
+.venv-ml/
+.local/
+__pycache__/

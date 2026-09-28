@@ -34,6 +34,10 @@ The LLM may interpret language and draft text. It must not bypass the determinis
 
 ## Core records
 
+The 2026-09-28 migration integrates local English sentiment and Vietnamese rules into the existing Next.js server. `src/server/sentiment.mjs` is the only new runtime adapter; it loads the authorized checkpoint's ONNX export locally. `policy.mjs` supplies language routing, rule sentiment, intent, temporal urgency, and priority. `repository.ts` persists these signals on existing MongoDB threads; `inbox-service.ts` returns the shared contract and ranks cached signals without re-running models. No parallel API, frontend, types, or SQLite store was added. See the migration map in [DECISIONS.md](DECISIONS.md).
+
+Recommendation risk is derived from independent business-risk signals, not the thread's urgency. Sentiment confidence and recommendation confidence are different fields. Priority reasons combine action need, intent, time pressure, negative tone, hostile/direct demand flags, and waiting time; none grants action permission. Fixture expected labels/evidence remain test oracles and are not runtime classifications or retrieval output. Existing demonstration scenario flags still explicitly simulate ambiguity/model failure; this is not a general extraction benchmark.
+
 Each recommendation should retain:
 
 - message and thread IDs;

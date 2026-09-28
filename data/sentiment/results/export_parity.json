@@ -1,0 +1,467 @@
+{
+  "source_weights_sha256": "fe9f3a0ce17660e048ada03c4db1f26063e9ff6ff8f6657d16df5230a8993dba",
+  "onnx_sha256": "a532971e33c196e4298c0a262553071f1e96ecd879f8c97c18e9b78fe4460aa1",
+  "format": "ONNX fp32",
+  "label_mapping": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "held_out_rows": 75,
+  "label_disagreements": [],
+  "max_logit_difference": 2.0384788513183594e-05,
+  "test_manifest_sha256": "4c6d7a7091e44cac909de479dc0d31288aa1e6f665bc9f99847fe8f4ede8a745",
+  "note": "Conversion parity check only; no training or test tuning.",
+  "cases": [
+    {
+      "row_id": "new:4",
+      "text": "Is the strap adjustable on this bag?",
+      "label": "neutral",
+      "confidence": 0.9992762207984924
+    },
+    {
+      "row_id": "new:12",
+      "text": "Is the fabric stretchy at all?",
+      "label": "neutral",
+      "confidence": 0.9992502331733704
+    },
+    {
+      "row_id": "new:13",
+      "text": "What's the heel height on these?",
+      "label": "neutral",
+      "confidence": 0.9990847110748291
+    },
+    {
+      "row_id": "new:15",
+      "text": "Can the shelves be adjusted or are they fixed?",
+      "label": "neutral",
+      "confidence": 0.9992566704750061
+    },
+    {
+      "row_id": "new:22",
+      "text": "Is the beige more yellow or more pink in person?",
+      "label": "neutral",
+      "confidence": 0.9992341995239258
+    },
+    {
+      "row_id": "new:40",
+      "text": "My order was for the floral print; the parcel has the solid blue one.",
+      "label": "neutral",
+      "confidence": 0.9991623163223267
+    },
+    {
+      "row_id": "new:49",
+      "text": "I entered my old apartment number. Can I update it before dispatch?",
+      "label": "neutral",
+      "confidence": 0.9992535710334778
+    },
+    {
+      "row_id": "new:56",
+      "text": "Can I add a note for the recipient before you pack it?",
+      "label": "neutral",
+      "confidence": 0.999273955821991
+    },
+    {
+      "row_id": "new:69",
+      "text": "Can I cancel a preorder from yesterday?",
+      "label": "neutral",
+      "confidence": 0.9992734789848328
+    },
+    {
+      "row_id": "new:72",
+      "text": "Hi, tracking hasn't updated since Tuesday. Can you look into it?",
+      "label": "neutral",
+      "confidence": 0.9990715980529785
+    },
+    {
+      "row_id": "new:75",
+      "text": "It says delivered, but I haven't found the package yet.",
+      "label": "neutral",
+      "confidence": 0.9991205334663391
+    },
+    {
+      "row_id": "new:77",
+      "text": "The courier page hasn't moved for four days.",
+      "label": "neutral",
+      "confidence": 0.9989275336265564
+    },
+    {
+      "row_id": "new:79",
+      "text": "My tracking link opens, but there's no scan history.",
+      "label": "neutral",
+      "confidence": 0.9989001750946045
+    },
+    {
+      "row_id": "new:85",
+      "text": "The parcel is at the local hub now. Do I need to collect it?",
+      "label": "neutral",
+      "confidence": 0.9992376565933228
+    },
+    {
+      "row_id": "new:86",
+      "text": "I checked with reception and they don't have it either.",
+      "label": "neutral",
+      "confidence": 0.9987678527832031
+    },
+    {
+      "row_id": "new:89",
+      "text": "One of the two boxes arrived. Is the other on a separate tracking link?",
+      "label": "neutral",
+      "confidence": 0.9992678761482239
+    },
+    {
+      "row_id": "new:98",
+      "text": "I selected pay on delivery. Why is it asking for a card now?",
+      "label": "negative",
+      "confidence": 0.9977649450302124
+    },
+    {
+      "row_id": "new:108",
+      "text": "One corner of the frame is cracked.",
+      "label": "neutral",
+      "confidence": 0.9991084933280945
+    },
+    {
+      "row_id": "new:129",
+      "text": "The clock loses a few minutes each day.",
+      "label": "neutral",
+      "confidence": 0.9988804459571838
+    },
+    {
+      "row_id": "new:132",
+      "text": "The lamp flickers whenever I touch the switch.",
+      "label": "neutral",
+      "confidence": 0.9992184638977051
+    },
+    {
+      "row_id": "new:139",
+      "text": "After changing the batteries, the display is still blank.",
+      "label": "neutral",
+      "confidence": 0.9991422891616821
+    },
+    {
+      "row_id": "new:142",
+      "text": "What is the return window for shoes bought online?",
+      "label": "neutral",
+      "confidence": 0.9990289211273193
+    },
+    {
+      "row_id": "new:150",
+      "text": "I sent it back on Monday. Has the return reached you?",
+      "label": "neutral",
+      "confidence": 0.9992561936378479
+    },
+    {
+      "row_id": "new:159",
+      "text": "I no longer have the sleeve it came in. Can I still return it?",
+      "label": "neutral",
+      "confidence": 0.9992297887802124
+    },
+    {
+      "row_id": "new:162",
+      "text": "Is the photo showing the two-piece set or just the top?",
+      "label": "neutral",
+      "confidence": 0.999261200428009
+    },
+    {
+      "row_id": "new:174",
+      "text": "I checked the link again; it still says the adapter is included.",
+      "label": "neutral",
+      "confidence": 0.999165415763855
+    },
+    {
+      "row_id": "new:179",
+      "text": "The label was stuck directly on the product box.",
+      "label": "neutral",
+      "confidence": 0.9991891980171204
+    },
+    {
+      "row_id": "new:180",
+      "text": "There was tape across the gift box. Can I get a replacement box?",
+      "label": "neutral",
+      "confidence": 0.9992511868476868
+    },
+    {
+      "row_id": "new:189",
+      "text": "The parcel was resealed with clear tape. Can you verify it before I use it?",
+      "label": "neutral",
+      "confidence": 0.9992522597312927
+    },
+    {
+      "row_id": "new:197",
+      "text": "The order ID is in the screenshot above.",
+      "label": "neutral",
+      "confidence": 0.9991689920425415
+    },
+    {
+      "row_id": "new:201",
+      "text": "The app isn't letting me attach a second photo. Is email okay?",
+      "label": "neutral",
+      "confidence": 0.9974127411842346
+    },
+    {
+      "row_id": "new:208",
+      "text": "The payment went through on the second attempt.",
+      "label": "neutral",
+      "confidence": 0.9991787075996399
+    },
+    {
+      "row_id": "new:210",
+      "text": "The size chart loaded after I refreshed the page.",
+      "label": "neutral",
+      "confidence": 0.9992135763168335
+    },
+    {
+      "row_id": "new:218",
+      "text": "The second package arrived separately, like you said.",
+      "label": "neutral",
+      "confidence": 0.9988123178482056
+    },
+    {
+      "row_id": "new:221",
+      "text": "I got the exchange email, so I'll send the first pair back.",
+      "label": "neutral",
+      "confidence": 0.9991357922554016
+    },
+    {
+      "row_id": "new:228",
+      "text": "Can I collect the order from your store instead?",
+      "label": "neutral",
+      "confidence": 0.9992673993110657
+    },
+    {
+      "row_id": "new:238",
+      "text": "I'll use the pickup option you mentioned earlier.",
+      "label": "neutral",
+      "confidence": 0.9989915490150452
+    },
+    {
+      "row_id": "new:245",
+      "text": "Is the small size still in stock?",
+      "label": "neutral",
+      "confidence": 0.9992302656173706
+    },
+    {
+      "row_id": "new:250",
+      "text": "Would the same screws fit the larger shelf?",
+      "label": "neutral",
+      "confidence": 0.9991843104362488
+    },
+    {
+      "row_id": "new:267",
+      "text": "I paid for the larger size, and getting the small one is unacceptable.",
+      "label": "negative",
+      "confidence": 0.997655987739563
+    },
+    {
+      "row_id": "new:272",
+      "text": "I'm upset that half the set is missing after I paid for all of it.",
+      "label": "negative",
+      "confidence": 0.9978477954864502
+    },
+    {
+      "row_id": "new:274",
+      "text": "I reported the missing strap last week. Why am I still chasing this?",
+      "label": "negative",
+      "confidence": 0.9977753758430481
+    },
+    {
+      "row_id": "new:276",
+      "text": "Really poor packing to leave out the screws for a table.",
+      "label": "negative",
+      "confidence": 0.9975612163543701
+    },
+    {
+      "row_id": "new:289",
+      "text": "I expected better than stitching that comes apart in one wash.",
+      "label": "positive",
+      "confidence": 0.8831236362457275
+    },
+    {
+      "row_id": "new:302",
+      "text": "I'm frustrated that I paid for express and it still hasn't shipped.",
+      "label": "negative",
+      "confidence": 0.997880220413208
+    },
+    {
+      "row_id": "new:309",
+      "text": "I took time off for the delivery twice. This is frustrating.",
+      "label": "negative",
+      "confidence": 0.9978996515274048
+    },
+    {
+      "row_id": "new:321",
+      "text": "I can't believe checkout took my money without creating an order.",
+      "label": "negative",
+      "confidence": 0.9976383447647095
+    },
+    {
+      "row_id": "new:338",
+      "text": "This whole process has been needlessly stressful.",
+      "label": "negative",
+      "confidence": 0.997703492641449
+    },
+    {
+      "row_id": "new:339",
+      "text": "It's careless to ship glass in a bag with no padding.",
+      "label": "negative",
+      "confidence": 0.9976288676261902
+    },
+    {
+      "row_id": "new:343",
+      "text": "This is such a hassle over a simple purchase.",
+      "label": "negative",
+      "confidence": 0.9972014427185059
+    },
+    {
+      "row_id": "new:352",
+      "text": "Nice, I paid extra to watch the parcel sit at the depot for a week.",
+      "label": "negative",
+      "confidence": 0.995955228805542
+    },
+    {
+      "row_id": "new:356",
+      "text": "Love the gift box with a shipping label stuck right across it.",
+      "label": "negative",
+      "confidence": 0.5008419752120972
+    },
+    {
+      "row_id": "new:360",
+      "text": "Awesome, another day off work waiting for a courier who never came.",
+      "label": "negative",
+      "confidence": 0.9974365830421448
+    },
+    {
+      "row_id": "new:369",
+      "text": "I like the item; the way it was packed was unacceptable.",
+      "label": "negative",
+      "confidence": 0.997510552406311
+    },
+    {
+      "row_id": "new:373",
+      "text": "You were helpful before, but being ignored now is really irritating.",
+      "label": "negative",
+      "confidence": 0.9972987771034241
+    },
+    {
+      "row_id": "new:377",
+      "text": "The package arrived fast, but finding a dented item inside was upsetting.",
+      "label": "negative",
+      "confidence": 0.9977279305458069
+    },
+    {
+      "row_id": "new:380",
+      "text": "Not happy at all with how flimsy this feels.",
+      "label": "negative",
+      "confidence": 0.9964954257011414
+    },
+    {
+      "row_id": "new:383",
+      "text": "These earrings are even prettier in person, thank you!",
+      "label": "positive",
+      "confidence": 0.9986739158630371
+    },
+    {
+      "row_id": "new:392",
+      "text": "I'm so happy with the print quality on this shirt.",
+      "label": "positive",
+      "confidence": 0.9986733198165894
+    },
+    {
+      "row_id": "new:394",
+      "text": "These sheets are really soft. Glad I ordered them.",
+      "label": "positive",
+      "confidence": 0.9986360669136047
+    },
+    {
+      "row_id": "new:402",
+      "text": "The bottle doesn't leak at all. Really pleased with it.",
+      "label": "positive",
+      "confidence": 0.9986152648925781
+    },
+    {
+      "row_id": "new:412",
+      "text": "This is my second order of the same socks. They're great.",
+      "label": "positive",
+      "confidence": 0.9986912608146667
+    },
+    {
+      "row_id": "new:413",
+      "text": "The mirror was easy to hang and looks really nice.",
+      "label": "positive",
+      "confidence": 0.9986397624015808
+    },
+    {
+      "row_id": "new:415",
+      "text": "The fit is perfect and the material feels so nice.",
+      "label": "positive",
+      "confidence": 0.9986584186553955
+    },
+    {
+      "row_id": "new:417",
+      "text": "The planter is exactly the size I needed. So happy with it.",
+      "label": "positive",
+      "confidence": 0.9986912608146667
+    },
+    {
+      "row_id": "new:423",
+      "text": "The cake stand is beautiful. Can't wait to use it.",
+      "label": "positive",
+      "confidence": 0.998158872127533
+    },
+    {
+      "row_id": "new:426",
+      "text": "The watch band looks great and was easy to attach.",
+      "label": "positive",
+      "confidence": 0.9985976815223694
+    },
+    {
+      "row_id": "new:433",
+      "text": "You were really helpful picking out the right adapter.",
+      "label": "positive",
+      "confidence": 0.9985217452049255
+    },
+    {
+      "row_id": "new:434",
+      "text": "Really appreciate you letting me know the brown one was back in stock before I checked out.",
+      "label": "positive",
+      "confidence": 0.9985148310661316
+    },
+    {
+      "row_id": "new:450",
+      "text": "That was much easier than I expected. Thanks for helping.",
+      "label": "positive",
+      "confidence": 0.9986867308616638
+    },
+    {
+      "row_id": "new:452",
+      "text": "You were right about the fit. Really helpful advice.",
+      "label": "positive",
+      "confidence": 0.9985809326171875
+    },
+    {
+      "row_id": "new:459",
+      "text": "The missing piece arrived today. Really appreciate your help.",
+      "label": "positive",
+      "confidence": 0.9986257553100586
+    },
+    {
+      "row_id": "new:492",
+      "text": "The gift wrapping looked beautiful. Thank you!",
+      "label": "positive",
+      "confidence": 0.9986251592636108
+    },
+    {
+      "row_id": "new:494",
+      "text": "Super quick delivery and the box was in perfect shape.",
+      "label": "positive",
+      "confidence": 0.9982813596725464
+    },
+    {
+      "row_id": "new:501",
+      "text": "Really happy with the service from start to finish.",
+      "label": "positive",
+      "confidence": 0.9986201524734497
+    }
+  ]
+}

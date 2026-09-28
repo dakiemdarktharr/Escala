@@ -1,0 +1,501 @@
+text,sentiment,issue_type,context,source,review_status
+Does this jacket run small or should I get my usual size?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can you measure the width across the shoulders for a medium?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the strap adjustable on this bag?,neutral,product_question,standalone,synthetic,assistant_reviewed
+"Hey, is the inside of this bottle stainless steel?",neutral,product_question,standalone,synthetic,assistant_reviewed
+Does the lamp come with a bulb?,neutral,product_question,standalone,synthetic,assistant_reviewed
+How long is the charging cable in the box?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is this one safe to put in the dishwasher?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can you show the back of the dress?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does the case cover the camera bump too?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Would a 13-inch laptop fit in this bag?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the fabric stretchy at all?,neutral,product_question,standalone,synthetic,assistant_reviewed
+What's the heel height on these?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does the speaker connect to two devices at once?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can the shelves be adjusted or are they fixed?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the print on both sides of the shirt?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Do you have a photo of it in normal daylight?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the cover removable for washing?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does this charger work with the older model?,neutral,product_question,standalone,synthetic,assistant_reviewed
+How many pockets does the backpack have?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can you tell me the length of the sleeves?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the beige more yellow or more pink in person?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does the set include both pillowcases?,neutral,product_question,standalone,synthetic,assistant_reviewed
+What's the weight limit for the chair?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can you send a close-up of the clasp?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the lining cotton or polyester?,neutral,product_question,standalone,synthetic,assistant_reviewed
+"The one you linked above is the smaller version, right?",neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Does that measurement include the handle?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Could you check if the lid on that one twists off?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Is the photo you sent of the regular size?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Can I use the same replacement filters with this model?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+I ordered the cream one but received the gray one. Can you check?,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+The box says size 8; my order confirmation says size 7.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+I chose the striped cover and the plain one arrived.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+Is this the 500 ml bottle? I ordered the 750 ml.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+"The label on mine says navy, but the order says black.",neutral,wrong_variant,attachment,synthetic,assistant_reviewed
+This is a left-hand glove. I selected right-hand at checkout.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+I think I received the short cable instead of the long one.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+The shoes came in a 39 and I bought a 38.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+My order was for the floral print; the parcel has the solid blue one.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+"The replacement came today, but it's still the same size as before.",neutral,wrong_variant,prior_thread,synthetic,assistant_reviewed
+This is the color that arrived. I selected sage green.,neutral,wrong_variant,attachment,synthetic,assistant_reviewed
+"The sticker says 128 GB, though I picked the 256 GB option.",neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+I bought the round mirror and got the square one.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+I checked the order details again and it does say medium.,neutral,wrong_variant,prior_thread,synthetic,assistant_reviewed
+Could you confirm which color was packed for order 4812? Mine looks brown.,neutral,wrong_variant,standalone,synthetic,assistant_reviewed
+I placed an order a minute ago. Can I switch it to the black one?,neutral,order_change,standalone,synthetic,assistant_reviewed
+Could you add a second pair to the same parcel?,neutral,order_change,standalone,synthetic,assistant_reviewed
+I entered my old apartment number. Can I update it before dispatch?,neutral,order_change,standalone,synthetic,assistant_reviewed
+Can I remove the extra cable from my order?,neutral,order_change,standalone,synthetic,assistant_reviewed
+"I picked size M, but I need L. Has it shipped yet?",neutral,order_change,standalone,synthetic,assistant_reviewed
+Can I change the phone number on the delivery details?,neutral,order_change,standalone,synthetic,assistant_reviewed
+Would it be possible to combine my two orders?,neutral,order_change,standalone,synthetic,assistant_reviewed
+I ordered the wrong pattern. Can you change it to checks?,neutral,order_change,standalone,synthetic,assistant_reviewed
+Could you leave the invoice out of the gift parcel?,neutral,order_change,standalone,synthetic,assistant_reviewed
+Can I add a note for the recipient before you pack it?,neutral,order_change,standalone,synthetic,assistant_reviewed
+"If it hasn't gone out yet, please use the new address I sent.",neutral,order_change,prior_thread,synthetic,assistant_reviewed
+"Actually, make that two bottles instead of three.",neutral,order_change,prior_thread,synthetic,assistant_reviewed
+Could you keep the same color and just change the size?,neutral,order_change,prior_thread,synthetic,assistant_reviewed
+The address in your last message still has the old postcode.,neutral,order_change,prior_thread,synthetic,assistant_reviewed
+Can you put both items under the first order number?,neutral,order_change,prior_thread,synthetic,assistant_reviewed
+I ordered the wrong model. Is cancellation still possible?,neutral,cancellation,standalone,synthetic,assistant_reviewed
+Can you cancel the spare case but keep the phone stand?,neutral,cancellation,standalone,synthetic,assistant_reviewed
+"If this hasn't shipped, I'd like to cancel the order.",neutral,cancellation,standalone,synthetic,assistant_reviewed
+I accidentally checked out twice. Can one order be canceled?,neutral,cancellation,standalone,synthetic,assistant_reviewed
+Please go ahead and cancel it if the size isn't available.,neutral,cancellation,prior_thread,synthetic,assistant_reviewed
+Has the cancellation gone through? The order still shows active.,neutral,cancellation,prior_thread,synthetic,assistant_reviewed
+"I got the cancellation email, but the app still says packing.",neutral,cancellation,prior_thread,synthetic,assistant_reviewed
+Can I cancel a preorder from yesterday?,neutral,cancellation,standalone,synthetic,assistant_reviewed
+Is there a cutoff time for canceling before shipment?,neutral,cancellation,standalone,synthetic,assistant_reviewed
+I don't need the second one anymore; please cancel just that item.,neutral,cancellation,prior_thread,synthetic,assistant_reviewed
+"Hi, tracking hasn't updated since Tuesday. Can you look into it?",neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+My parcel is still marked as awaiting pickup. Is that normal?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+The delivery window was yesterday and nothing arrived. Any update?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+"It says delivered, but I haven't found the package yet.",neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+Could you check why the parcel went back to the depot?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+The courier page hasn't moved for four days.,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+Do you know when order 7193 is expected to arrive?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+"My tracking link opens, but there's no scan history.",neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+"The driver marked it attempted, but I was home. Can it be redelivered?",neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+I haven't received the dispatch email yet. Was it sent out?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+You mentioned it would ship on Friday. Has it left yet?,neutral,shipping_delay,prior_thread,synthetic,assistant_reviewed
+The new tracking number is showing the same status as yesterday.,neutral,shipping_delay,prior_thread,synthetic,assistant_reviewed
+Is the courier still scheduled to come tomorrow?,neutral,shipping_delay,prior_thread,synthetic,assistant_reviewed
+The parcel is at the local hub now. Do I need to collect it?,neutral,shipping_delay,prior_thread,synthetic,assistant_reviewed
+I checked with reception and they don't have it either.,neutral,shipping_delay,prior_thread,synthetic,assistant_reviewed
+I can wait until Monday if the carrier needs more time.,neutral,shipping_delay,prior_thread,synthetic,assistant_reviewed
+Are you able to see a delivery estimate for my postcode?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+One of the two boxes arrived. Is the other on a separate tracking link?,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+The pickup point says they haven't received the parcel yet.,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+My order page says shipped but the courier says label created.,neutral,shipping_delay,standalone,synthetic,assistant_reviewed
+My card was charged twice. Could you check the order payments?,neutral,payment,standalone,synthetic,assistant_reviewed
+"My bank shows a charge, but checkout stayed on the loading screen. Can you confirm my order?",neutral,payment,standalone,synthetic,assistant_reviewed
+Can I use two cards for the same order?,neutral,payment,standalone,synthetic,assistant_reviewed
+The discount code isn't showing up in the total. Is it still valid?,neutral,payment,standalone,synthetic,assistant_reviewed
+I paid by bank transfer this morning. Has it reached you?,neutral,payment,standalone,synthetic,assistant_reviewed
+Will the money be refunded to my bank card or issued as store credit?,neutral,payment,standalone,synthetic,assistant_reviewed
+I selected pay on delivery. Why is it asking for a card now?,neutral,payment,standalone,synthetic,assistant_reviewed
+The amount on the receipt is different from my checkout total.,neutral,payment,standalone,synthetic,assistant_reviewed
+Can I get an invoice with my business name on it?,neutral,payment,standalone,synthetic,assistant_reviewed
+"My payment shows pending, but the order says confirmed.",neutral,payment,standalone,synthetic,assistant_reviewed
+I tried the new link and it still says payment failed.,neutral,payment,prior_thread,synthetic,assistant_reviewed
+The charge disappeared from my bank app. Is the order still active?,neutral,payment,prior_thread,synthetic,assistant_reviewed
+Could you send the receipt for the second transaction?,neutral,payment,prior_thread,synthetic,assistant_reviewed
+The refund isn't showing yet. How long does it usually take?,neutral,payment,prior_thread,synthetic,assistant_reviewed
+Can I pay the difference for the larger size now?,neutral,payment,prior_thread,synthetic,assistant_reviewed
+The mug arrived with a chip on the rim. What should I do?,neutral,damage,standalone,synthetic,assistant_reviewed
+One corner of the frame is cracked.,neutral,damage,standalone,synthetic,assistant_reviewed
+The pump on the bottle broke in transit. Can I get just the pump?,neutral,damage,standalone,synthetic,assistant_reviewed
+The glass on the front is chipped here.,neutral,damage,attachment,synthetic,assistant_reviewed
+The box was crushed and the lid inside is bent.,neutral,damage,standalone,synthetic,assistant_reviewed
+A seam is open along the side of the bag. Is an exchange possible?,neutral,damage,standalone,synthetic,assistant_reviewed
+The top drawer has a split in it. How do I request a replacement?,neutral,damage,standalone,synthetic,assistant_reviewed
+There's a scratch across the screen right out of the box.,neutral,damage,attachment,synthetic,assistant_reviewed
+The clasp snapped when I tried it on. Can I send it back?,neutral,damage,standalone,synthetic,assistant_reviewed
+Two of the plates arrived cracked. The other four are fine.,neutral,damage,standalone,synthetic,assistant_reviewed
+I ordered a set of four and only three were in the box.,neutral,missing_item,standalone,synthetic,assistant_reviewed
+The extra nozzle wasn't included. Does it ship separately?,neutral,missing_item,standalone,synthetic,assistant_reviewed
+There was no charging brick in my package. Is it supposed to be included?,neutral,missing_item,standalone,synthetic,assistant_reviewed
+My parcel has the top but not the matching skirt.,neutral,missing_item,standalone,synthetic,assistant_reviewed
+This is everything that was in the bag; the strap is missing.,neutral,missing_item,attachment,synthetic,assistant_reviewed
+Only one of my two notebooks arrived. Is the other still coming?,neutral,missing_item,standalone,synthetic,assistant_reviewed
+The listing shows two filters. I received one.,neutral,missing_item,standalone,synthetic,assistant_reviewed
+The table came without the screws. Can you send them?,neutral,missing_item,standalone,synthetic,assistant_reviewed
+"I got the headset, but the microphone attachment isn't here.",neutral,missing_item,standalone,synthetic,assistant_reviewed
+The parcel had one sock in it. Was the pair packed separately?,neutral,missing_item,standalone,synthetic,assistant_reviewed
+"The earbuds pair, but the left side has no sound.",neutral,product_quality,standalone,synthetic,assistant_reviewed
+The zipper gets caught halfway up. Is there a way to fix it?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+The clock loses a few minutes each day.,neutral,product_quality,standalone,synthetic,assistant_reviewed
+This charger stops after about ten minutes. Can I exchange it?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+The fabric shrank after the first wash. What's the care policy?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+The lamp flickers whenever I touch the switch.,neutral,product_quality,standalone,synthetic,assistant_reviewed
+I can't get the lid to seal all the way. Is there a trick to it?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+The chair rocks on a flat floor. Can I get a replacement foot?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+One of the buttons doesn't respond when I press it.,neutral,product_quality,standalone,synthetic,assistant_reviewed
+The adhesive is coming loose on one edge. Can this be returned?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+The stitching has come undone along this side.,neutral,product_quality,attachment,synthetic,assistant_reviewed
+I tried resetting it like you said and it still won't connect.,neutral,product_quality,prior_thread,synthetic,assistant_reviewed
+"After changing the batteries, the display is still blank.",neutral,product_quality,prior_thread,synthetic,assistant_reviewed
+The handle comes off when I lift the bag. Is that covered?,neutral,product_quality,standalone,synthetic,assistant_reviewed
+"It turns on, but it doesn't charge my phone.",neutral,product_quality,standalone,synthetic,assistant_reviewed
+What is the return window for shoes bought online?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Can I return one item from a bundle and keep the rest?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+The dress doesn't fit. How do I start an exchange?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Do I need the original packaging to send this back?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Is the return label emailed after I submit the request?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Does a refund include the delivery fee?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Can I drop the return at a parcel shop instead of arranging pickup?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+"If I exchange for a smaller size, do I pay shipping again?",neutral,refund_return,standalone,synthetic,assistant_reviewed
+I sent it back on Monday. Has the return reached you?,neutral,refund_return,prior_thread,synthetic,assistant_reviewed
+The tracking says you received it. When will the refund be issued?,neutral,refund_return,prior_thread,synthetic,assistant_reviewed
+I filled in the return form. Is there anything else to do?,neutral,refund_return,prior_thread,synthetic,assistant_reviewed
+I can send a photo of the label if that helps with the return.,neutral,refund_return,prior_thread,synthetic,assistant_reviewed
+The color is different in person. Is that eligible for a return?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Can I swap this for the same item in black?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+I ordered two pairs. Can I send back just the unworn one?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+How long after delivery can I request an exchange?,neutral,refund_return,standalone,synthetic,assistant_reviewed
+Please refund the original payment method when it arrives.,neutral,refund_return,prior_thread,synthetic,assistant_reviewed
+I no longer have the sleeve it came in. Can I still return it?,neutral,refund_return,prior_thread,synthetic,assistant_reviewed
+"The page says 1.5 meters, but the cable I received is one meter.",neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+The listing mentions a remote. I didn't see one in the box.,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+Is the photo showing the two-piece set or just the top?,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+"The product page says cotton, but the tag says polyester.",neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+It says rechargeable in the description. Mine uses AA batteries.,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+The photo shows a pocket on the front; mine doesn't have one.,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+"I ordered based on the dimensions shown, but mine measures shorter.",neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+Does the price shown include both cushions?,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+"The care tag says hand wash, while the page says machine wash.",neutral,listing_mismatch,attachment,synthetic,assistant_reviewed
+"The specs you sent say 60 W, but the box says 45 W.",neutral,listing_mismatch,prior_thread,synthetic,assistant_reviewed
+"The page calls it wireless, but mine has a fixed cord.",neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+The shade looks different from the product photo. Is this the same colorway?,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+Are the measurements in the listing for the outer or inner tray?,neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+"My package has one cover, while the listing says a pack of two.",neutral,listing_mismatch,standalone,synthetic,assistant_reviewed
+I checked the link again; it still says the adapter is included.,neutral,listing_mismatch,prior_thread,synthetic,assistant_reviewed
+"The outer box was open when it arrived, but everything seems to be inside.",neutral,packaging,standalone,synthetic,assistant_reviewed
+There wasn't any padding around the glass. Should I check it for cracks?,neutral,packaging,standalone,synthetic,assistant_reviewed
+The seal was already broken when I opened the parcel.,neutral,packaging,standalone,synthetic,assistant_reviewed
+My parcel came in two bags. Is that how you normally pack the set?,neutral,packaging,standalone,synthetic,assistant_reviewed
+The label was stuck directly on the product box.,neutral,packaging,standalone,synthetic,assistant_reviewed
+There was tape across the gift box. Can I get a replacement box?,neutral,packaging,standalone,synthetic,assistant_reviewed
+"The package was wet on the outside, though the item looks dry.",neutral,packaging,standalone,synthetic,assistant_reviewed
+This corner of the shipping box is torn open.,neutral,packaging,attachment,synthetic,assistant_reviewed
+The bottle cap came loose inside the mailer.,neutral,packaging,standalone,synthetic,assistant_reviewed
+Only the retail box was used for shipping. Is that expected?,neutral,packaging,standalone,synthetic,assistant_reviewed
+I kept the parcel as requested. Do you need a photo of the label too?,neutral,packaging,prior_thread,synthetic,assistant_reviewed
+The replacement came in a padded mailer this time.,neutral,packaging,prior_thread,synthetic,assistant_reviewed
+The cardboard sleeve is missing. Does that affect a return?,neutral,packaging,standalone,synthetic,assistant_reviewed
+The two jars were packed together without a divider.,neutral,packaging,standalone,synthetic,assistant_reviewed
+The parcel was resealed with clear tape. Can you verify it before I use it?,neutral,packaging,standalone,synthetic,assistant_reviewed
+I sent the order number above. Do you need anything else?,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+The link in your last message takes me to a blank page.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+I haven't received the form you mentioned yet.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+Could you send that instruction again? The image won't load.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+Do you want the serial number from the box or the item?,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+I can be home after 5 if the courier needs a time slot.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+I sent the video through the chat just now.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+The order ID is in the screenshot above.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+Can you confirm which address you have on file?,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+I only see one return option on the page you sent.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+That number belongs to my previous order. The current one ends in 62.,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+The app isn't letting me attach a second photo. Is email okay?,neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+"Yes, I can bring it to the pickup point tomorrow.",neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+"I don't have the batch number anymore, just the receipt.",neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+"The courier called me, and we arranged delivery for Friday.",neutral,seller_response,prior_thread,synthetic,assistant_reviewed
+Found it at the building desk. The tracking page hadn't updated.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The second box arrived this morning. I have both now.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+It was in the side pocket of the packaging after all.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The payment went through on the second attempt.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+I got the return label in my email now.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The size chart loaded after I refreshed the page.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The parcel was with my neighbor. I've picked it up.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The tracking number works now; it says out for delivery.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+I found the missing screw in the bottom of the box.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+"The replacement is here, and it turns on.",neutral,resolution,prior_thread,synthetic,assistant_reviewed
+I changed the batteries and the display is working.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The refund showed up in my account today.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+I used the other charging port and it's working now.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+"The second package arrived separately, like you said.",neutral,resolution,prior_thread,synthetic,assistant_reviewed
+I found the order under my other email address.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The delivery address is correct on the new confirmation.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+"I got the exchange email, so I'll send the first pair back.",neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The strap was tucked under the cardboard insert.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+I checked again and the voucher has been applied.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+The pickup happened this afternoon.,neutral,resolution,prior_thread,synthetic,assistant_reviewed
+Can I order through chat or do I need to use the website?,neutral,other,standalone,synthetic,assistant_reviewed
+What time does customer service close today?,neutral,other,standalone,synthetic,assistant_reviewed
+Do you ship outside the country?,neutral,other,standalone,synthetic,assistant_reviewed
+Can I collect the order from your store instead?,neutral,other,standalone,synthetic,assistant_reviewed
+Do you offer gift wrapping?,neutral,other,standalone,synthetic,assistant_reviewed
+Where can I leave delivery instructions for the courier?,neutral,other,standalone,synthetic,assistant_reviewed
+Can I use a different billing address from the delivery address?,neutral,other,standalone,synthetic,assistant_reviewed
+Do you restock this item regularly?,neutral,other,standalone,synthetic,assistant_reviewed
+Will I get a notification when the brown one is back?,neutral,other,standalone,synthetic,assistant_reviewed
+Can I place the order now and pay when it's available?,neutral,other,standalone,synthetic,assistant_reviewed
+Is there a minimum order for free delivery?,neutral,other,standalone,synthetic,assistant_reviewed
+Do you have a physical shop I can visit?,neutral,other,standalone,synthetic,assistant_reviewed
+Could you send the warranty details for this model?,neutral,other,standalone,synthetic,assistant_reviewed
+I'll use the pickup option you mentioned earlier.,neutral,other,prior_thread,synthetic,assistant_reviewed
+Please contact me by text if the courier can't find the address.,neutral,other,prior_thread,synthetic,assistant_reviewed
+Do you sell the refill separately?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the white one see-through in bright light?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can this stand be folded flat for travel?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does the replacement part fit the model from last year?,neutral,product_question,standalone,synthetic,assistant_reviewed
+What's the diameter of the base?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the small size still in stock?,neutral,product_question,standalone,synthetic,assistant_reviewed
+How dark is the tint on this one?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can you show how the clasp closes?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does it need to be plugged in while running?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is there a version without the logo?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Would the same screws fit the larger shelf?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Is that the color shown in your last photo?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Does the cheaper one have the same battery size?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Could you measure the opening for me?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Are you expecting more of the small size this week?,neutral,product_question,prior_thread,synthetic,assistant_reviewed
+Is the handle removable for cleaning?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Does the charger have a USB-C connector?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Will a standard water bottle fit in the side pocket?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can the mirror be hung horizontally?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Is the pattern printed or embroidered?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Do the legs come attached or do I put them on myself?,neutral,product_question,standalone,synthetic,assistant_reviewed
+Can I buy the cover without the insert?,neutral,product_question,standalone,synthetic,assistant_reviewed
+I'm really disappointed. I asked for charcoal and got bright blue.,negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"I checked the size twice before ordering, so this mix-up is frustrating.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+Why do you keep sending the wrong version? This is the third one.,negative,wrong_variant,standalone,synthetic,assistant_reviewed
+I already returned the first wrong size. Please don't make me do it again.,negative,wrong_variant,prior_thread,synthetic,assistant_reviewed
+This isn't even close to the color in the photos. I'm annoyed.,negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"I paid for the larger size, and getting the small one is unacceptable.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"You assured me it would be black, and it's gray again. I'm fed up.",negative,wrong_variant,prior_thread,synthetic,assistant_reviewed
+"The wrong print came, and now I have to sort out your mistake.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+I needed the 256 GB one. Sending the smaller one has messed up my plans.,negative,wrong_variant,standalone,synthetic,assistant_reviewed
+I don't want another apology; I want the right size this time.,negative,wrong_variant,prior_thread,synthetic,assistant_reviewed
+I'm upset that half the set is missing after I paid for all of it.,negative,missing_item,standalone,synthetic,assistant_reviewed
+How do you leave out the only cable needed to use it?,negative,missing_item,standalone,synthetic,assistant_reviewed
+I reported the missing strap last week. Why am I still chasing this?,negative,missing_item,prior_thread,synthetic,assistant_reviewed
+This is ridiculous; the box is missing two of the four pieces.,negative,missing_item,standalone,synthetic,assistant_reviewed
+Really poor packing to leave out the screws for a table.,negative,missing_item,standalone,synthetic,assistant_reviewed
+I'm disappointed that a new mirror arrived with a crack across it.,negative,damage,standalone,synthetic,assistant_reviewed
+This was packed so badly the plates never stood a chance.,negative,damage,standalone,synthetic,assistant_reviewed
+How did this scratched screen pass a check before shipping?,negative,damage,attachment,synthetic,assistant_reviewed
+I can't believe a broken mug was sent in such a flimsy box.,negative,damage,standalone,synthetic,assistant_reviewed
+The replacement is chipped too. This is getting exhausting.,negative,damage,prior_thread,synthetic,assistant_reviewed
+"The frame arrived smashed, and I'm not happy about it.",negative,damage,standalone,synthetic,assistant_reviewed
+It's pretty upsetting to open a gift and find it broken.,negative,damage,standalone,synthetic,assistant_reviewed
+You sent a cracked lid and expect me to pay return shipping? No.,negative,damage,standalone,synthetic,assistant_reviewed
+This is the worst packaging I've seen for glassware.,negative,damage,standalone,synthetic,assistant_reviewed
+The second shipment has the same damage. I'm losing patience.,negative,damage,prior_thread,synthetic,assistant_reviewed
+The headphones died after two days. That's seriously disappointing.,negative,product_quality,standalone,synthetic,assistant_reviewed
+This zipper is terrible; it catches every time I use the bag.,negative,product_quality,standalone,synthetic,assistant_reviewed
+I expected better than stitching that comes apart in one wash.,negative,product_quality,standalone,synthetic,assistant_reviewed
+I'm annoyed that the charger barely works straight out of the box.,negative,product_quality,standalone,synthetic,assistant_reviewed
+The fabric feels so cheap for the price I paid.,negative,product_quality,standalone,synthetic,assistant_reviewed
+This chair is wobbly and feels unsafe. I'm not happy with it.,negative,product_quality,standalone,synthetic,assistant_reviewed
+The clasp broke on day one. That's really poor quality.,negative,product_quality,standalone,synthetic,assistant_reviewed
+I'm honestly upset with how quickly the color faded.,negative,product_quality,standalone,synthetic,assistant_reviewed
+I don't think this should be sold if the switch fails this often.,negative,product_quality,standalone,synthetic,assistant_reviewed
+The battery is awful. It doesn't even last through my commute.,negative,product_quality,standalone,synthetic,assistant_reviewed
+Your photos made this look much bigger. I feel misled.,negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+It's irritating that the page says leather when the tag says plastic.,negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+The description promised two filters. Leaving one out feels dishonest.,negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+I'm disappointed that the color looks nothing like your listing.,negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+Please fix the page; it gives people the wrong idea about what's included.,negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+I'm frustrated that I paid for express and it still hasn't shipped.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+Waiting a week with no tracking update is getting ridiculous.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+I was told it would arrive yesterday. I'm really annoyed now.,negative,shipping_delay,prior_thread,synthetic,assistant_reviewed
+I'm tired of having to ask where this parcel is every day.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+"This delay is messing up a birthday gift, and I'm upset.",negative,shipping_delay,standalone,synthetic,assistant_reviewed
+You said it was on the way three days ago. Please stop giving me vague updates.,negative,shipping_delay,prior_thread,synthetic,assistant_reviewed
+It's unacceptable to mark it delivered when nothing showed up here.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+I took time off for the delivery twice. This is frustrating.,negative,shipping_delay,prior_thread,synthetic,assistant_reviewed
+No scans for six days and no explanation? That's poor service.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+I'm fed up waiting for an order that should have been here last week.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+Why do I have to pay to return something you sent broken? That's unfair.,negative,refund_return,standalone,synthetic,assistant_reviewed
+I'm still waiting for my refund after three weeks. This is ridiculous.,negative,refund_return,prior_thread,synthetic,assistant_reviewed
+Your return process is a headache for such a simple exchange.,negative,refund_return,standalone,synthetic,assistant_reviewed
+I sent every photo you asked for. I'm tired of repeating myself.,negative,refund_return,prior_thread,synthetic,assistant_reviewed
+I regret buying here if a refund takes this much chasing.,negative,refund_return,standalone,synthetic,assistant_reviewed
+Please stop sending the same form; I've filled it out twice already.,negative,refund_return,prior_thread,synthetic,assistant_reviewed
+I'm disappointed that I have to argue over a faulty item.,negative,refund_return,standalone,synthetic,assistant_reviewed
+It's been a month since you received the return. This is unacceptable.,negative,refund_return,prior_thread,synthetic,assistant_reviewed
+Being charged twice and then told to wait is really frustrating.,negative,payment,standalone,synthetic,assistant_reviewed
+I can't believe checkout took my money without creating an order.,negative,payment,standalone,synthetic,assistant_reviewed
+I've explained the duplicate charge twice. Please actually check it.,negative,payment,prior_thread,synthetic,assistant_reviewed
+It's upsetting to see a higher charge than the price shown at checkout.,negative,payment,standalone,synthetic,assistant_reviewed
+"I asked to cancel before shipping, so why was it sent anyway?",negative,cancellation,prior_thread,synthetic,assistant_reviewed
+It's frustrating that there's no way to cancel an accidental duplicate order.,negative,cancellation,standalone,synthetic,assistant_reviewed
+I keep getting copy-paste replies that don't answer my question.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+I've asked for the tracking number three times. This is getting annoying.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+Please read what I wrote before telling me to restart it again.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+I'm disappointed that nobody replied after promising to follow up.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+This is the fourth person I've had to explain the same problem to.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+Your last reply ignored the missing item completely. That's frustrating.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+I'm tired of being passed around when I just need an answer.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+"The support link still doesn't work, and the canned response isn't helping.",negative,seller_response,prior_thread,synthetic,assistant_reviewed
+I'm really unhappy with how this order has been handled.,negative,service_feedback,standalone,synthetic,assistant_reviewed
+The service has been poor from checkout to delivery.,negative,service_feedback,standalone,synthetic,assistant_reviewed
+"I was patient at first, but this has turned into a terrible experience.",negative,service_feedback,prior_thread,synthetic,assistant_reviewed
+I won't order again if this is how problems are handled.,negative,service_feedback,prior_thread,synthetic,assistant_reviewed
+This whole process has been needlessly stressful.,negative,service_feedback,standalone,synthetic,assistant_reviewed
+It's careless to ship glass in a bag with no padding.,negative,packaging,standalone,synthetic,assistant_reviewed
+The box arrived filthy. I'm not happy giving this as a gift.,negative,packaging,standalone,synthetic,assistant_reviewed
+The gift packaging looks awful with tape across the front.,negative,packaging,standalone,synthetic,assistant_reviewed
+I have spent more time fixing this order than using the product. I'm exhausted.,negative,other,prior_thread,synthetic,assistant_reviewed
+This is such a hassle over a simple purchase.,negative,other,standalone,synthetic,assistant_reviewed
+It's disappointing that I had to chase you to get any update.,negative,other,prior_thread,synthetic,assistant_reviewed
+Love paying for next-day delivery and getting it next week.,negative,shipping_delay,standalone,synthetic,assistant_reviewed
+"Great, the one color I didn't order is the one that arrived.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"Perfect, a cracked screen right out of the box.",negative,damage,standalone,synthetic,assistant_reviewed
+"Awesome, the set arrived without the part that makes it usable.",negative,missing_item,standalone,synthetic,assistant_reviewed
+"Amazing, the new headphones lasted a whole two days.",negative,product_quality,standalone,synthetic,assistant_reviewed
+"Great, another reply telling me to check the tracking page that still doesn't work.",negative,seller_response,prior_thread,synthetic,assistant_reviewed
+Love having to send the same return photo for the third time.,negative,refund_return,prior_thread,synthetic,assistant_reviewed
+"Nice, I paid extra to watch the parcel sit at the depot for a week.",negative,shipping_delay,standalone,synthetic,assistant_reviewed
+"Perfect, you sent the wrong size again after confirming the right one.",negative,wrong_variant,prior_thread,synthetic,assistant_reviewed
+"Awesome, the app charged me twice and says I never placed an order.",negative,payment,standalone,synthetic,assistant_reviewed
+"Great, you shipped it the morning after confirming my cancellation.",negative,cancellation,prior_thread,synthetic,assistant_reviewed
+Love the gift box with a shipping label stuck right across it.,negative,packaging,standalone,synthetic,assistant_reviewed
+"Fantastic, a two-piece set with only one piece in the parcel.",negative,missing_item,standalone,synthetic,assistant_reviewed
+"Perfect, the replacement arrived with the same crack.",negative,damage,prior_thread,synthetic,assistant_reviewed
+"Great, the 'wireless' speaker comes with a cord it can't run without.",negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+"Awesome, another day off work waiting for a courier who never came.",negative,shipping_delay,prior_thread,synthetic,assistant_reviewed
+Love getting a 'we'll get back to you' message every day with no actual answer.,negative,seller_response,prior_thread,synthetic,assistant_reviewed
+"Fantastic, the zipper broke before I even left the house.",negative,product_quality,standalone,synthetic,assistant_reviewed
+"Nice, a size XS when the order clearly says XL.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"Great, the refund form expired while I was waiting for your reply.",negative,refund_return,prior_thread,synthetic,assistant_reviewed
+"I like the style, but I'm upset you sent a size that won't fit.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"The color is lovely, but the crack on the front is really disappointing.",negative,damage,standalone,synthetic,assistant_reviewed
+"Shipping was quick, but the quality is honestly awful.",negative,product_quality,standalone,synthetic,assistant_reviewed
+"The bag looks cute, but I feel misled about how small it is.",negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+I like the item; the way it was packed was unacceptable.,negative,packaging,standalone,synthetic,assistant_reviewed
+"It worked yesterday, but the battery is dreadful today.",negative,product_quality,standalone,synthetic,assistant_reviewed
+"I appreciate the reply, but I'm frustrated that the refund still hasn't started.",negative,refund_return,prior_thread,synthetic,assistant_reviewed
+"Thanks for checking, but I'm still upset it missed the delivery date.",negative,shipping_delay,prior_thread,synthetic,assistant_reviewed
+"You were helpful before, but being ignored now is really irritating.",negative,seller_response,prior_thread,synthetic,assistant_reviewed
+"The size fits, but the stitching is so poor I'm returning it.",negative,product_quality,standalone,synthetic,assistant_reviewed
+"I get that delays happen, but the lack of updates has been awful.",negative,service_feedback,prior_thread,synthetic,assistant_reviewed
+"I wanted to like these, but sending the wrong color twice is disappointing.",negative,wrong_variant,standalone,synthetic,assistant_reviewed
+"The package arrived fast, but finding a dented item inside was upsetting.",negative,damage,standalone,synthetic,assistant_reviewed
+"The order is confirmed now, but I'm still annoyed about that second charge.",negative,payment,prior_thread,synthetic,assistant_reviewed
+"The print is pretty, but calling this waterproof feels misleading.",negative,listing_mismatch,standalone,synthetic,assistant_reviewed
+Not happy at all with how flimsy this feels.,negative,product_quality,standalone,synthetic,assistant_reviewed
+"I understand the courier is busy, but this repeated delay is frustrating.",negative,shipping_delay,prior_thread,synthetic,assistant_reviewed
+The hoodie fits exactly how I wanted. Love it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+"These earrings are even prettier in person, thank you!",positive,product_feedback,standalone,synthetic,assistant_reviewed
+Just tried the lamp and the light is perfect for my desk.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The backpack has so much room without feeling bulky. I'm really happy with it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+This color is gorgeous in daylight.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The fabric feels great and the fit is spot on.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I've worn the shoes all day and they're so comfortable.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The little shelf looks great in my room.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+Love how sturdy the phone stand feels.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The mug is the perfect size for my morning coffee. Thanks!,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I'm so happy with the print quality on this shirt.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The bag looks even better than it did in the photos.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+These sheets are really soft. Glad I ordered them.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The new charger works perfectly with my phone.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+"I was worried about the size, but it fits beautifully.",positive,product_feedback,standalone,synthetic,assistant_reviewed
+The clasp feels solid and the necklace sits nicely.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I've used the blender all week and it's been great.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The jacket is warm without being too heavy. I love it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The colors on the poster came out really well.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+This case fits my tablet perfectly.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The bottle doesn't leak at all. Really pleased with it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I got the table set up and it looks fantastic.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The stitching is neat and the bag feels well made.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The keyboard is so nice to type on.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+"These towels are thick and soft, exactly what I wanted.",positive,product_feedback,standalone,synthetic,assistant_reviewed
+The little details on the dress are lovely.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I'm really impressed with the sound from this speaker.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The cushion covers look great on my sofa.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+Love the shade of blue on this one.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The screen protector went on easily and looks clean.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+This is my second order of the same socks. They're great.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The mirror was easy to hang and looks really nice.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I'm happy with how neatly the notebook pages are bound.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The fit is perfect and the material feels so nice.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+Didn't expect the brush to be this good. Love it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The planter is exactly the size I needed. So happy with it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+These headphones are comfortable and the sound is great.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+"The shade matches my room perfectly, thanks!",positive,product_feedback,standalone,synthetic,assistant_reviewed
+The new straps feel much sturdier. Really pleased.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The dress looks amazing on. I'm glad I went with this one.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+This is such a handy little organizer. Love it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The cake stand is beautiful. Can't wait to use it.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+Everything in the set feels good quality.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The texture is nicer than I expected. Very happy.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The watch band looks great and was easy to attach.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The lamp color is lovely and the dimmer works smoothly.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The phone grip holds really well. Thanks!,positive,product_feedback,standalone,synthetic,assistant_reviewed
+My kid loves the new lunch bag. The print is adorable.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+The shelves fit the space perfectly. I'm delighted.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+I've already recommended this bag to a friend. It's excellent.,positive,product_feedback,standalone,synthetic,assistant_reviewed
+Thank you for answering my sizing question so quickly.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+You were really helpful picking out the right adapter.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Really appreciate you letting me know the brown one was back in stock before I checked out.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+I appreciate how clearly you explained the return steps.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+You got back to me so fast. Thanks for the help!,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Really appreciate you measuring it for me.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Thanks for being patient while I sorted out the address.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+"That was a quick fix. Great support, thanks.",positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+You made the exchange really easy. I appreciate it.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Thanks for the honest advice on which size to get.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Really helpful service. I'll order again.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+You checked with the courier right away. Thank you.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+I appreciate you following up without me having to ask.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Thanks for finding the color I wanted.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Your instructions were easy to follow. Got it set up now.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Thanks for keeping me updated while the parcel was delayed.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+The person on chat was lovely and sorted it out fast.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+I really appreciate the extra photo you sent.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+That was much easier than I expected. Thanks for helping.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Thank you for checking the serial number for me.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+You were right about the fit. Really helpful advice.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+Thanks for making sure the gift got sent to the right address.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+I appreciate you getting back to me on the weekend.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+"Great communication throughout the order, thanks.",positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+You handled the mix-up really well. Thank you.,positive,service_feedback,prior_thread,synthetic,assistant_reviewed
+The replacement speaker is working now. Appreciate you sorting that out.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+Got the correct color this time and I love it.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The missing piece arrived today. Really appreciate your help.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The refund came through. Thanks for sorting it out so quickly.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+These smaller shoes fit comfortably. Thanks for swapping them for me.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+I found the parcel at reception. Thanks for helping me track it down.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The second delivery was smooth. Really happy with how you handled it.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+It's charging now. Thanks for walking me through that.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The new lid fits and doesn't leak. Appreciate it!,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The correct print is here now and looks lovely.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The courier just dropped it off. Thanks for checking in.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+I got the return label and the pickup is booked. Thanks for the help.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+"The order change went through. That's perfect, thank you.",positive,resolution,prior_thread,synthetic,assistant_reviewed
+The extra charge has been reversed. Really glad you fixed it.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The replacement glass arrived safely. Looks great now.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+"Everything is here now, and it all looks fantastic.",positive,resolution,prior_thread,synthetic,assistant_reviewed
+The new strap matches the bag perfectly. Thanks!,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The parcel showed up today. I appreciate you staying on it.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The address was updated in time. Thank you for catching that.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+I finally got the smaller size and it fits really well.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The new unit connects right away. Thanks for replacing it.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The missing screws arrived and the table is up now. Thank you.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The refund hit my card this morning. Appreciate the follow-up.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+Got the photos you sent and picked the right shade. Thanks!,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The new clasp is secure. I'm really happy with the necklace now.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+I tried your suggestion and the speaker sounds great now.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The gift made it in time. Thank you so much for helping.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The corrected invoice is here. Thanks for fixing it quickly.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+The replacement cover fits perfectly. Much appreciated.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+All sorted now. Thanks for being so responsive.,positive,resolution,prior_thread,synthetic,assistant_reviewed
+My order came early and was packed really well. Thank you!,positive,service_feedback,standalone,synthetic,assistant_reviewed
+The delivery was quick and everything arrived safely. Very happy.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+That was faster than I expected. Thanks for shipping it so quickly!,positive,service_feedback,standalone,synthetic,assistant_reviewed
+The parcel was packed with care. I appreciate that.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Really pleased with how smoothly this order went.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+The gift wrapping looked beautiful. Thank you!,positive,service_feedback,standalone,synthetic,assistant_reviewed
+"Got it a day early, which was a lovely surprise.",positive,service_feedback,standalone,synthetic,assistant_reviewed
+Super quick delivery and the box was in perfect shape.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Everything was labeled clearly. Made setup really easy.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Thanks for shipping both items together like I asked.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+The order updates were really helpful. Great experience.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Delivery was on time and the package was neat. Thanks!,positive,service_feedback,standalone,synthetic,assistant_reviewed
+I loved the little note in the parcel. Such a nice touch.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Thanks for packing the glass so carefully; it arrived perfect.,positive,service_feedback,standalone,synthetic,assistant_reviewed
+Really happy with the service from start to finish.,positive,service_feedback,standalone,synthetic,assistant_reviewed

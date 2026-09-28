@@ -10,8 +10,15 @@
     "expectedIntent": "product_and_shipping_faq",
     "expectedAction": "AUTO_REPLY",
     "expectedUrgency": "LOW",
-    "expectedUrgencyReasons": ["routine product question", "no deadline or financial impact"],
-    "expectedEvidenceIds": ["kb-product-blue-linen-shirt-v1", "kb-shipping-standard-v1", "kb-approved-answer-availability-v1"],
+    "expectedUrgencyReasons": [
+      "routine product question",
+      "no deadline or financial impact"
+    ],
+    "expectedEvidenceIds": [
+      "kb-product-blue-linen-shirt-v1",
+      "kb-shipping-standard-v1",
+      "kb-approved-answer-availability-v1"
+    ],
     "modelStatus": "AVAILABLE",
     "safeFallback": null
   },
@@ -26,8 +33,13 @@
     "expectedIntent": "return_or_exchange",
     "expectedAction": "ASK_CLARIFICATION",
     "expectedUrgency": "MEDIUM",
-    "expectedUrgencyReasons": ["return window may be time-sensitive", "order and product details are missing"],
-    "expectedEvidenceIds": ["kb-returns-exchange-v1"],
+    "expectedUrgencyReasons": [
+      "return window may be time-sensitive",
+      "order and product details are missing"
+    ],
+    "expectedEvidenceIds": [
+      "kb-returns-exchange-v1"
+    ],
     "modelStatus": "AVAILABLE",
     "safeFallback": null
   },
@@ -42,8 +54,15 @@
     "expectedIntent": "payment_dispute_and_refund",
     "expectedAction": "ESCALATE",
     "expectedUrgency": "HIGH",
-    "expectedUrgencyReasons": ["payment or financial impact", "refund request", "customer waiting for resolution"],
-    "expectedEvidenceIds": ["kb-payment-review-v1", "kb-seller-constraints-v1"],
+    "expectedUrgencyReasons": [
+      "payment or financial impact",
+      "refund request",
+      "customer waiting for resolution"
+    ],
+    "expectedEvidenceIds": [
+      "kb-payment-review-v1",
+      "kb-seller-constraints-v1"
+    ],
     "modelStatus": "AVAILABLE",
     "safeFallback": "Payment status must be verified by a seller or payment operator; no refund promise is generated."
   },
@@ -58,8 +77,15 @@
     "expectedIntent": "delivery_deadline_and_cancellation",
     "expectedAction": "ESCALATE",
     "expectedUrgency": "HIGH",
-    "expectedUrgencyReasons": ["delivery deadline within 24 hours", "customer mentions cancellation", "unauthorized delivery guarantee could cause irreversible loss"],
-    "expectedEvidenceIds": ["kb-shipping-standard-v1", "kb-seller-constraints-v1"],
+    "expectedUrgencyReasons": [
+      "delivery deadline within 24 hours",
+      "customer mentions cancellation",
+      "unauthorized delivery guarantee could cause irreversible loss"
+    ],
+    "expectedEvidenceIds": [
+      "kb-shipping-standard-v1",
+      "kb-seller-constraints-v1"
+    ],
     "modelStatus": "AVAILABLE",
     "safeFallback": "A seller must verify the carrier status and approved delivery commitment before replying."
   },
@@ -74,8 +100,14 @@
     "expectedIntent": "cancellation_and_complaint",
     "expectedAction": "ESCALATE",
     "expectedUrgency": "HIGH",
-    "expectedUrgencyReasons": ["order status mutation", "public complaint threat", "reputational damage risk"],
-    "expectedEvidenceIds": ["kb-seller-constraints-v1"],
+    "expectedUrgencyReasons": [
+      "order status mutation",
+      "public complaint threat",
+      "reputational damage risk"
+    ],
+    "expectedEvidenceIds": [
+      "kb-seller-constraints-v1"
+    ],
     "modelStatus": "AVAILABLE",
     "safeFallback": "Cancellation and complaint handling require seller review; no order mutation is performed."
   },
@@ -90,7 +122,10 @@
     "expectedIntent": "compatibility_question",
     "expectedAction": "ESCALATE",
     "expectedUrgency": "MEDIUM",
-    "expectedUrgencyReasons": ["product compatibility is not documented", "answer would be unreliable without evidence"],
+    "expectedUrgencyReasons": [
+      "product compatibility is not documented",
+      "answer would be unreliable without evidence"
+    ],
     "expectedEvidenceIds": [],
     "modelStatus": "AVAILABLE",
     "safeFallback": "No verified compatibility evidence was retrieved; seller review is required and no product claim is generated."
@@ -106,9 +141,85 @@
     "expectedIntent": null,
     "expectedAction": "DRAFT_FOR_SELLER",
     "expectedUrgency": "LOW",
-    "expectedUrgencyReasons": ["routine-looking question, but interpretation is unavailable"],
-    "expectedEvidenceIds": ["kb-store-faq-v1"],
+    "expectedUrgencyReasons": [
+      "routine-looking question, but interpretation is unavailable"
+    ],
+    "expectedEvidenceIds": [
+      "kb-store-faq-v1"
+    ],
     "modelStatus": "FAILED",
     "safeFallback": "The model was unavailable; no answer was generated. Please review manually."
+  },
+  {
+    "id": "msg-vn-hostile-001",
+    "threadId": "thread-vn-hostile-001",
+    "scenario": "vn-hostile",
+    "receivedAt": "2026-10-31T10:50:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer vn-hostile",
+    "text": "dit me may tra tien cho tao",
+    "expectedIntent": "refund",
+    "expectedAction": "ESCALATE",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-vn-demand-001",
+    "threadId": "thread-vn-demand-001",
+    "scenario": "vn-demand",
+    "receivedAt": "2026-10-31T10:50:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer vn-demand",
+    "text": "trả tiền cho tao",
+    "expectedIntent": "refund",
+    "expectedAction": "ESCALATE",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-vn-factual-001",
+    "threadId": "thread-vn-factual-001",
+    "scenario": "vn-factual",
+    "receivedAt": "2026-10-31T10:50:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer vn-factual",
+    "text": "shop ơi em đặt màu kem mà sao nhận màu đen vậy ạ",
+    "expectedIntent": "wrong_item",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-vn-positive-001",
+    "threadId": "thread-vn-positive-001",
+    "scenario": "vn-positive",
+    "receivedAt": "2026-10-31T10:50:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer vn-positive",
+    "text": "cảm ơn shop nha hàng đẹp lắm",
+    "expectedIntent": "positive_feedback",
+    "expectedAction": "ESCALATE",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
   }
 ]
