@@ -4,6 +4,8 @@ import type {
   InboxResponse,
   SellerDecisionInput,
   SellerDecisionResponse,
+  SendReplyInput,
+  SendReplyResponse,
   ThreadDetailResponse,
 } from "@/domain/contracts";
 
@@ -11,6 +13,7 @@ export interface InboxClient {
   inbox(signal?: AbortSignal): Promise<InboxResponse>;
   thread(id: string, signal?: AbortSignal): Promise<ThreadDetailResponse>;
   recommend(id: string): Promise<CreateRecommendationResponse>;
+  reply(id: string, input: SendReplyInput): Promise<SendReplyResponse>;
   decide(
     id: string,
     input: SellerDecisionInput,
@@ -93,6 +96,11 @@ export const apiClient: InboxClient = {
   decide: (id, input) =>
     request<SellerDecisionResponse>(
       `/api/recommendations/${encodeURIComponent(id)}/decision`,
+      { method: "POST", body: JSON.stringify(input) },
+    ),
+  reply: (id, input) =>
+    request<SendReplyResponse>(
+      `/api/threads/${encodeURIComponent(id)}/replies`,
       { method: "POST", body: JSON.stringify(input) },
     ),
 };

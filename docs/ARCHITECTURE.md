@@ -51,7 +51,7 @@ Each recommendation should retain:
 
 ## Data flow and side-effect boundary
 
-MongoDB Atlas stores seeded synthetic threads, knowledge evidence, recommendations, and seller decisions. Use a repository boundary so fixtures remain available for development and safe fallback. `ESCALA_ENABLE_EXTERNAL_SEND=false` is mandatory; the MVP must not mutate marketplace orders or send buyer messages. OpenAI handles structured language interpretation and draft suggestions only; deterministic policy retains action authority.
+MongoDB stores seeded synthetic threads, buyer/seller messages, knowledge evidence, recommendations, and seller decisions. Use a repository boundary so fixtures remain available for development and safe fallback. `ESCALA_ENABLE_EXTERNAL_SEND=false` is mandatory; the MVP must not mutate marketplace orders or send external buyer messages. Local seller replies are persisted as explicitly simulated delivery. OpenAI handles structured language interpretation and draft suggestions only; deterministic policy retains action authority.
 
 ## Failure behavior
 
@@ -60,3 +60,11 @@ If retrieval is empty, evidence conflicts, confidence is low, the model fails, o
 ## Deferred infrastructure
 
 No authentication, multi-tenancy, live marketplace OAuth, vector store, queue, background worker, or billing is in MVP scope. Vercel is the target deployment platform once the required user-managed deployment token is available.
+
+## Seller response integration (2026-09-28)
+
+The existing service now follows analysis → operational next step/template or OpenAI candidate → deterministic reply risk → confidence/grounding → delivery state. Shared `DeliveryState` is separate from the existing operational `RecommendationAction`. There is one reply route for manual/suggested/edited/automatic modes, calling one service implementation; there is no parallel reply application. Existing decision route retains decline/handoff audit responsibility. Risk no longer prevents drafting or implies escalation to another person.
+
+`repository.ts` materializes seed buyer messages idempotently into the same Mongo database. `mongodb.ts` exposes the messages collection using shared types. `inbox-service.ts` stores replies/status/audit/unread atomically with sequence ordering and request-id retry protection. Original buyer analysis inputs remain unchanged. Existing inbox components render history, a suggestion panel, always-present composer, approval controls and audit provenance. No new frontend component or database system was added.
+
+No live OpenAI credentials were present: actual local UI uses reviewed templates with null confidence. Integration tests use an explicitly test-only Responses protocol stub to exercise real SDK handling and deterministic confidence/approval gates. This is not live generation validation. Future production sending requires authentication, authorization, connector delivery receipts and representative evaluation; none is implied by simulated delivery.

@@ -8,7 +8,7 @@ The MVP includes a responsive seller inbox, synthetic support scenarios and know
 
 Development now uses this cloned Escala repository. The authorized Shop Signal migration integrates its local English checkpoint and Vietnamese triage into Escala's existing server, contracts, MongoDB thread records, and inbox components. There is one Next.js app and one database system (MongoDB). No old SQLite database or FastAPI service is used.
 
-Verified on 2026-09-28: 51 tests pass including a real local MongoDB replica-set HTTP test, lint/typecheck/demo validation/build pass, and the production app runs locally. The API test verifies persisted recommendations and audit records across an app restart and runs the cached-analysis refresh command. Atlas connectivity, live OpenAI generation, and Vercel deployment were not verified in this clone; no credentials were copied from the old project.
+Verified on 2026-09-28: 60 tests pass including a real local MongoDB replica-set HTTP test, lint/typecheck/demo validation/build pass, and the production app runs locally. The API test verifies persisted seller replies, recommendations and audit records across an app restart and runs the cached-analysis refresh command. Atlas connectivity, live OpenAI generation, and Vercel deployment were not verified in this clone; no credentials were copied from the old project.
 
 ## Run locally
 
@@ -37,13 +37,42 @@ $env:MONGOMS_DOWNLOAD_DIR=".local/mongodb-binaries"
 npm test
 ```
 
-Without that flag, the HTTP test is explicitly skipped. The real-model test is also explicitly skipped if model assets are missing. Integration tests use an isolated temporary MongoDB replica set, never your Atlas database, and make no OpenAI calls.
+Without that flag, the HTTP test is explicitly skipped. The real-model test is also explicitly skipped if model assets are missing. Integration tests use an isolated temporary MongoDB replica set, never your Atlas database, and use a local OpenAI Responses protocol stub for confidence/adapter tests; no real OpenAI calls are made.
 
+## Seller reply workflow
+
+Every conversation has a manual reply composer. Prepare recommendation shows an operational next step (for example, Review refund request), a buyer-facing draft, independent risk/confidence, evidence, source and delivery state. Send suggested reply saves a safe reviewed response; Approve & send records explicit authorization for a sensitive reply. Edit loads the original suggestion into the composer, Discard draft removes the association, and Decline leaves manual replies available. Replies are simulated and stored in the existing MongoDB database, then displayed in history across refresh/restart. No order action is performed.
+
+`AUTO_SEND` means eligible, not already sent. The demo's Simulate automatic send control exercises the same authoritative reply route in automatic mode. It requires a successful live candidate, known intent, exact reviewed wording, complete evidence and confidence >= `ESCALA_CONFIDENCE_THRESHOLD` (default 0.90). Free-form/high-confidence alone does not pass grounding. `APPROVAL_REQUIRED` always blocks automatic mode; `REVIEW_REQUIRED` keeps low/unavailable-confidence suggestions visible. `MANUAL_ONLY` represents no usable suggestion. See [POLICY.md](docs/POLICY.md).
+
+**Why drafting was unavailable:** the old service short-circuited risky messages before calling OpenAI and the local clone has no `OPENAI_API_KEY`. The shortcut is removed. Without that key, the UI names the missing configuration and shows clearly labeled reviewed template wording with null confidence. This is not model output. To enable live drafting, set `OPENAI_API_KEY`, `OPENAI_MODEL` and `OPENAI_REASONING_EFFORT` in ignored `.env.local`, and restart Next.js. MongoDB must be a replica set (Atlas or local replica set) for reply/audit transactions. No credentials were recovered from another project.
+
+Production run after setting `.env.local`:
+
+```powershell
+npm run build
+npm run start -- -H 127.0.0.1 -p 3100
+```
+
+Verified locally on 2026-09-28: all 60 tests passed with the integration flag, lint/typecheck/build and 17-message/7-document validation passed. The real HTTP/Mongo test covers fallback drafts, approval bypass rejection, editing/manual sends, idempotent retries, decline/stale protection, preserved priority, audit and app restart. A local protocol stub tests actual SDK parsing, high/low confidence, safe automatic simulation and rejection of a completed-refund claim; this is not live OpenAI validation. In the actual browser, all cases below were opened and exercised; edited/manual/approved replies survived reload and the edit audit showed original and final wording.
+
+| Buyer case | Sentiment | Intent | Risk / local delivery state | Browser action |
+| --- | --- | --- | --- | --- |
+| Hi, does this come in black? | Neutral | Product information | Low / review required | Edit and send a question; no invented black stock |
+| I ordered medium but got large. | Neutral | Wrong item | Low / review required | Edit/send, reload, inspect original/final audit |
+| where is my fucking package | Negative | Order status | Low / review required | Send suggested order-number question |
+| Cancel my order. | Neutral | Cancellation | High / approval required | Approve/send acknowledgement; no cancellation claim |
+| I want a refund. | Neutral | Refund | High / approval required | Edit; send disabled until explicit approval; save |
+| dit me may tra tien cho tao | Negative, Vietnamese rules | Refund | High / approval required, priority 85 | Approve/send Vietnamese draft and reload |
+| Can you sort that thing out? | Neutral | Unknown | Low / review required | Retain draft, decline it and send manual clarification |
+| cảm ơn shop nha hàng đẹp lắm | Positive, Vietnamese rules | Positive feedback | Manual reply without recommendation | Send Vietnamese thank-you and reload |
+
+Local template confidence is null, not a fabricated low model score. The numerical 0.40 low-confidence and 0.96 high-confidence paths were exercised with the protocol stub in integration tests. Live generation quality and confidence calibration remain unverified without credentials and representative human-reviewed replies. The phrase-based risk/intent rules and templates are intentionally limited; auto-send uses conservative reviewed wording. The English checkpoint and ONNX hashes are unchanged; no sentiment training or priority-weight changes occurred in this task.
 ## Integrated sentiment and triage
 
 `src/server/policy.mjs` owns inspectable routing, Vietnamese tone cues, intent detection, temporal urgency, and queue priority alongside Escala's existing recommendation policy. Accents are one language signal; Vietnamese phrases, unaccented vocabulary, teencode, and mixed text also route to Vietnamese rules. The original message is retained. Questions, requests, and factual issue reports default to neutral; explicit dissatisfaction or abuse is negative. Rule labels have no calibrated confidence. Short ambiguous messages, negation, sarcasm, and unfamiliar slang remain limitations; these rules are not general Vietnamese sentiment validation.
 
-`src/server/sentiment.mjs` loads the local English model once per server process, using Transformers.js/ONNX on CPU with remote downloads disabled. Sentiment confidence is separate from the OpenAI candidate's recommendation confidence. Missing or malformed model assets produce an explicit unknown/unavailable result, not an invented neutral label. Hard financial or order-action rules retain authority regardless of either model's output; no message is sent and no order is changed.
+`src/server/sentiment.mjs` loads the local English model once per server process, using Transformers.js/ONNX on CPU with remote downloads disabled. Sentiment confidence is separate from the OpenAI candidate's recommendation confidence. Missing or malformed model assets produce an explicit unknown/unavailable result, not an invented neutral label. Hard financial or order-action rules retain authority regardless of either model's output; local replies are persisted as simulated delivery and no marketplace message is sent or order changed.
 
 MongoDB threads cache analysis when seeded. Inbox refresh changes only waiting-time priority; it does not rerun model inference. Existing databases can be explicitly refreshed with `npm run refresh:analysis` after `.env.local` is configured. That command updates analysis fields only, retaining messages and seller state; historical recommendation/audit records remain historical. Risk, temporal urgency, and attention priority are separate. Runtime analysis and evidence lookup no longer use fixture `expected*` fields as answers.
 
@@ -106,4 +135,4 @@ Training chooses validation macro F1 with early stopping and fixed seeds; test r
 - [Earlier determination-engine contract](docs/DETERMINATION-ENGINE.md)
 - [Migration map, files, and exclusions](docs/DECISIONS.md#2026-09-28--use-the-cloned-escala-repository)
 
-Escala does not integrate with Shopee, send customer messages, mutate marketplace orders, or reuse DOCRELAY/SAND assets. Demo data is synthetic. Recommendation accuracy and seller trust remain unvalidated.
+Escala does not integrate with Shopee, send external customer messages, mutate marketplace orders, or reuse DOCRELAY/SAND assets. Demo data is synthetic. Recommendation accuracy and seller trust remain unvalidated.

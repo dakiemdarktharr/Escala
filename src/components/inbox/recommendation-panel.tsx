@@ -1,275 +1,91 @@
 "use client";
 
-import { useId, useState } from "react";
-import type {
-  RecommendationRecord,
-  SellerDecisionInput,
-} from "@/domain/contracts";
+import { useId } from "react";
+import type { RecommendationRecord, SendReplyInput } from "@/domain/contracts";
 import { Icon } from "@/components/ui/icon";
-import { actionLabels, LevelBadge, Notice, readable } from "./presentation";
+import { LevelBadge, Notice, readable } from "./presentation";
 
 export function RecommendationPanel({
-  recommendation,
-  draft,
-  onDraftChange,
-  onGenerate,
-  onDecision,
-  generating,
-  saving,
-  saveError,
-  success,
-  sample,
+  recommendation, onEdit, onSend, onDecline, onGenerate, busy, sample,
 }: {
   recommendation: RecommendationRecord;
-  draft: string;
-  onDraftChange: (text: string) => void;
+  onEdit: () => void;
+  onSend: (mode: SendReplyInput["mode"], approved: boolean) => void;
+  onDecline: () => void;
   onGenerate: () => void;
-  onDecision: (input: SellerDecisionInput) => void;
-  generating: boolean;
-  saving: boolean;
-  saveError: string | null;
-  success: string | null;
+  busy: boolean;
   sample: boolean;
 }) {
-  const editorId = useId();
-  const noteId = useId();
-  const [note, setNote] = useState("");
-  const [escalating, setEscalating] = useState(false);
-  const [submittedDraft, setSubmittedDraft] = useState<string | null>(null);
-  const [submittedKind, setSubmittedKind] = useState<
-    "reply" | "escalation" | null
-  >(null);
-  const busy = generating || saving;
-  const needsEscalation =
-    recommendation.action === "ESCALATE" || recommendation.risk === "high";
-  const clarification = recommendation.action === "ASK_CLARIFICATION";
-  const dirty = draft !== (recommendation.draft ?? "");
-  const hasEvidence = recommendation.evidence.length > 0;
-  const canSaveDraft = !needsEscalation && (clarification || hasEvidence);
-  const alreadySaved = Boolean(
-    success && submittedKind === "reply" && submittedDraft === draft,
-  );
-  const escalationRecorded = Boolean(success && submittedKind === "escalation");
-
-  function saveDraft() {
-    setSubmittedDraft(draft);
-    setSubmittedKind("reply");
-    onDecision(
-      clarification
-        ? { decision: "ask_clarification", editedDraft: draft.trim() }
-        : dirty ||
-            !recommendation.draft ||
-            recommendation.action === "DRAFT_FOR_SELLER"
-          ? { decision: "edit", editedDraft: draft.trim() }
-          : { decision: "approve" },
-    );
-  }
+  const titleId = useId();
+  const delivery = recommendation.deliveryState ??
+    (recommendation.risk === "high" ? "APPROVAL_REQUIRED" : "REVIEW_REQUIRED");
+  const approval = delivery === "APPROVAL_REQUIRED";
+  const pending = !recommendation.status || recommendation.status === "pending";
+  const hasDraft = Boolean(recommendation.draft?.trim());
+  const source = recommendation.draftSource ??
+    (recommendation.modelStatus === "live" ? "openai" : "none");
+  const deliveryLabel = {
+    AUTO_SEND: "Auto-send eligible",
+    APPROVAL_REQUIRED: "Seller approval required",
+    REVIEW_REQUIRED: "Suggested reply — review required",
+    MANUAL_ONLY: "Manual reply required",
+  }[delivery];
 
   return (
-    <section
-      className={`recommendation-card${needsEscalation ? " recommendation-escalate" : ""}`}
-      aria-labelledby={`${editorId}-title`}
-    >
+    <section className="recommendation-card" aria-labelledby={titleId}>
       <div className="recommendation-heading">
-        <span className="recommendation-symbol">
-          <Icon name={needsEscalation ? "shield" : "spark"} size={21} />
-        </span>
+        <span className="recommendation-symbol"><Icon name="spark" size={21} /></span>
         <div>
           <span className="subtle-label">Recommended next step</span>
-          <h3 id={`${editorId}-title`}>
-            {actionLabels[recommendation.action]}
-          </h3>
+          <h3 id={titleId}>{recommendation.recommendedStep || "Review buyer request"}</h3>
         </div>
         <LevelBadge kind="risk" level={recommendation.risk} />
       </div>
+      <p className="context-explanation">{deliveryLabel}</p>
+      {delivery === "REVIEW_REQUIRED" && <p className="context-explanation">{recommendation.confidence === null
+        ? "Confidence is unavailable. Review the suggested reply before sending."
+        : recommendation.confidence < recommendation.confidenceThreshold
+          ? "Confidence is below the automatic-send threshold. Review the draft, edit it or write your own reply."
+          : "This draft requires seller review before delivery."}</p>}
       <ul className="reason-list">
         {recommendation.reasons.map((reason, index) => (
-          <li key={`${reason}-${index}`}>
-            <Icon name="check" size={14} />
-            <span>{readable(reason)}</span>
-          </li>
+          <li key={`${reason}-${index}`}><Icon name="check" size={14} /><span>{readable(reason)}</span></li>
         ))}
       </ul>
       <div className="recommendation-facts">
-        <span>
-          {Number.isFinite(recommendation.confidence) &&
-          recommendation.confidence !== null
-            ? `${Math.round(recommendation.confidence * 100)}% ${sample ? "sample recommendation" : "recommendation"} confidence`
-            : "Recommendation confidence unavailable"}
-        </span>
-        <span>
-          {recommendation.evidence.length} evidence{" "}
-          {recommendation.evidence.length === 1 ? "source" : "sources"}
-        </span>
+        <span>{recommendation.confidence !== null && Number.isFinite(recommendation.confidence)
+          ? `${Math.round(recommendation.confidence * 100)}% recommendation confidence`
+          : "Recommendation confidence unavailable"}</span>
+        <span>{recommendation.evidence.length} evidence sources</span>
+        <span>{sample ? "Sample template" : source === "openai" ? "OpenAI draft" : source === "template" ? "Reviewed template fallback" : "No live draft source"}</span>
       </div>
+      {Number.isFinite(recommendation.confidenceThreshold) && (
+        <p className="context-footnote">Automatic-send threshold: {Math.round(recommendation.confidenceThreshold * 100)}%. Risk approval is required independently of confidence.</p>
+      )}
       {recommendation.modelStatus === "fallback" && (
-        <Notice variant="warning">
-          {sample
-            ? recommendation.modelNotice
-            : recommendation.modelNotice ||
-              "Automatic drafting is unavailable. Review the evidence and prepare a response manually."}
-        </Notice>
+        <Notice variant="warning">{recommendation.modelNotice || "Live OpenAI drafting is unavailable. The source of any fallback draft is labeled above; you can still write a manual reply."}</Notice>
       )}
-      {!needsEscalation && !canSaveDraft && (
-        <Notice variant="warning">
-          No evidence supports a reply. Record an escalation so a person can
-          check this request.
-        </Notice>
-      )}
-      {canSaveDraft && (
-        <div className="draft-editor">
-          <div className="editor-label">
-            <label htmlFor={editorId}>
-              {clarification ? "Clarification question" : "Reply draft"}
-            </label>
-            {dirty && <span>Unsaved edits</span>}
-          </div>
-          <textarea
-            id={editorId}
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            rows={5}
-            maxLength={5000}
-            placeholder={
-              clarification
-                ? "Ask one focused question about the missing details…"
-                : "Review the evidence and write your response…"
-            }
-            disabled={busy}
-            aria-describedby={`${editorId}-help`}
-          />
-          <div className="editor-footnote" id={`${editorId}-help`}>
-            <span>
-              {clarification
-                ? "Ask for the details you need; avoid making a commitment."
-                : "Check the facts and wording before recording your decision."}
-            </span>
-            <span>{draft.length}/5,000</span>
-          </div>
+      {hasDraft && (
+        <div className="suggested-reply">
+          <h4>Suggested reply</h4>
+          <p>{recommendation.draft}</p>
         </div>
       )}
-      {(needsEscalation || escalating) && (
-        <div className="escalation-note">
-          <label htmlFor={noteId}>
-            Handoff note <span>(optional)</span>
-          </label>
-          <textarea
-            id={noteId}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="What should the person reviewing this case check?"
-            rows={2}
-            maxLength={1000}
-            disabled={busy}
-          />
-        </div>
-      )}
-      {saveError && (
-        <Notice variant="error">{saveError} Your text is still here.</Notice>
-      )}
-      {success && <Notice variant="success">{success}</Notice>}
+      {!pending && <Notice>Suggestion {recommendation.status === "sent" ? "sent in the simulated conversation" : "declined"}. You can still write a new reply below.</Notice>}
       <div className="decision-actions">
-        {canSaveDraft && !escalating && (
-          <button
-            className="button primary"
-            disabled={busy || !draft.trim() || alreadySaved}
-            onClick={saveDraft}
-          >
-            <Icon
-              name={saving ? "refresh" : "check"}
-              size={16}
-              className={saving ? "spin" : ""}
-            />
-            {saving
-              ? "Recording…"
-              : alreadySaved
-                ? "Decision recorded"
-                : clarification
-                  ? "Record clarification"
-                  : dirty || !recommendation.draft
-                    ? "Save edited draft"
-                    : recommendation.action === "DRAFT_FOR_SELLER"
-                      ? "Save reviewed draft"
-                      : "Record approval"}
-          </button>
+        {pending && hasDraft && delivery !== "MANUAL_ONLY" && (
+          <>
+            <button className="button primary" disabled={busy} onClick={() => onSend("seller", approval)}>{approval ? "Approve & send" : "Send suggested reply"}</button>
+            <button className="button secondary" disabled={busy} onClick={onEdit}>Edit</button>
+            {delivery === "AUTO_SEND" && <button className="button secondary" disabled={busy} onClick={() => onSend("automatic", false)}>Simulate automatic send</button>}
+          </>
         )}
-        {needsEscalation || escalating || !canSaveDraft ? (
-          <button
-            className="button primary"
-            disabled={busy || escalationRecorded}
-            onClick={() => {
-              setSubmittedDraft(draft);
-              setSubmittedKind("escalation");
-              onDecision({
-                decision: "escalate",
-                ...(note.trim() ? { note: note.trim() } : {}),
-              });
-            }}
-          >
-            <Icon
-              name={saving ? "refresh" : "shield"}
-              size={16}
-              className={saving ? "spin" : ""}
-            />
-            {saving
-              ? "Recording…"
-              : escalationRecorded
-                ? "Escalation recorded"
-                : "Record escalation"}
-          </button>
-        ) : (
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() => setEscalating(true)}
-          >
-            Escalate instead
-          </button>
-        )}
-        {escalating && !needsEscalation && (
-          <button
-            className="text-button"
-            disabled={busy}
-            onClick={() => setEscalating(false)}
-          >
-            Back to draft
-          </button>
-        )}
+        {pending && <button className="text-button" disabled={busy} onClick={onDecline}>Decline suggestion</button>}
       </div>
-      <p className="no-send-note">
-        <Icon name="shield" size={13} />
-        {sample
-          ? "Preview only. Decisions reset on reload; no message is sent."
-          : "This records your decision. No buyer message is sent."}
-      </p>
+      <p className="no-send-note"><Icon name="shield" size={13} />{sample ? "Sample only: replies reset on reload." : "Delivery is simulated in Escala. No marketplace message or order change occurs."}</p>
       <div className="recommendation-bottom">
         <span>Policy {recommendation.policyVersion}</span>
-        <button
-          className="text-button"
-          disabled={busy || dirty}
-          onClick={onGenerate}
-          title={
-            dirty
-              ? "Save or reset draft edits before generating again"
-              : undefined
-          }
-        >
-          <Icon name="refresh" size={13} className={generating ? "spin" : ""} />
-          {generating
-            ? "Preparing…"
-            : sample
-              ? "Refresh sample"
-              : "Generate again"}
-        </button>
-        {dirty && (
-          <button
-            className="text-button"
-            disabled={busy}
-            onClick={() => onDraftChange(recommendation.draft ?? "")}
-          >
-            Reset edits
-          </button>
-        )}
+        <button className="text-button" disabled={busy} onClick={onGenerate}><Icon name="refresh" size={13} />{sample ? "Refresh sample" : "Generate again"}</button>
       </div>
     </section>
   );

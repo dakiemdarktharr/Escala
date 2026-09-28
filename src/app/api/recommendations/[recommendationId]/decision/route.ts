@@ -8,7 +8,7 @@ function isDecisionInput(value: unknown): value is SellerDecisionInput {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   if (candidate.decision === "approve") return true;
-  if (candidate.decision === "escalate") return candidate.note === undefined || typeof candidate.note === "string";
+  if (candidate.decision === "escalate" || candidate.decision === "decline") return candidate.note === undefined || (typeof candidate.note === "string" && candidate.note.length <= 500);
   if (candidate.decision === "edit" || candidate.decision === "ask_clarification") {
     return typeof candidate.editedDraft === "string" && candidate.editedDraft.trim().length > 0 && candidate.editedDraft.length <= 2000;
   }

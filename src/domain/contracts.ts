@@ -1,6 +1,7 @@
 /** Shared wire contracts for the Escala MVP API and seller inbox UI. */
 
 export type RiskLevel = "low" | "medium" | "high";
+export type DeliveryState = "AUTO_SEND" | "APPROVAL_REQUIRED" | "REVIEW_REQUIRED" | "MANUAL_ONLY";
 export interface SentimentAnalysis {
   label: "negative" | "neutral" | "positive" | "unknown";
   confidence: number | null;
@@ -44,6 +45,10 @@ export interface MessageRecord {
   role: "buyer" | "seller" | "system";
   text: string;
   createdAt: string;
+  delivery?: "simulated";
+  recommendationId?: string;
+  requestId?: string;
+  sequence?: number;
 }
 
 export interface OrderContext {
@@ -73,6 +78,18 @@ export interface AuditRecord {
   reasonCodes: string[];
   evidenceIds: string[];
   createdAt: string;
+  reply?: {
+    messageId: string;
+    originalDraft: string | null;
+    finalText: string;
+    edited: boolean;
+    source: "manual" | "suggestion" | "edited_suggestion" | "automatic";
+    risk: RiskLevel;
+    deliveryState: DeliveryState;
+    confidence: number | null;
+    sellerApproved: boolean;
+    delivery: "simulated";
+  };
 }
 
 export interface RecommendationRecord {
@@ -89,6 +106,24 @@ export interface RecommendationRecord {
   modelStatus: "live" | "fallback";
   modelNotice?: string;
   createdAt: string;
+  recommendedStep: string;
+  deliveryState: DeliveryState;
+  confidenceThreshold: number;
+  draftSource: "openai" | "template" | "none";
+  status: "pending" | "sent" | "declined";
+}
+
+export interface SendReplyInput {
+  requestId: string;
+  text: string;
+  recommendationId?: string;
+  mode: "seller" | "automatic";
+  sellerApproved?: boolean;
+}
+export interface SendReplyResponse {
+  message: MessageRecord;
+  audit: AuditRecord;
+  recommendation: RecommendationRecord | null;
 }
 
 export interface ThreadDetailResponse {
@@ -109,7 +144,8 @@ export type SellerDecisionInput =
   | { decision: "approve"; editedDraft?: never }
   | { decision: "edit"; editedDraft: string }
   | { decision: "ask_clarification"; editedDraft: string }
-  | { decision: "escalate"; note?: string };
+  | { decision: "escalate"; note?: string }
+  | { decision: "decline"; note?: string };
 
 export interface SellerDecisionResponse {
   audit: AuditRecord;

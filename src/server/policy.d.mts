@@ -1,4 +1,7 @@
-import type { RecommendationAction, InboxThreadSummary, SentimentAnalysis } from "@/domain/contracts";
+import type { RecommendationAction, InboxThreadSummary, SentimentAnalysis, DeliveryState, RiskLevel } from "@/domain/contracts";
+export function replyTemplate(text: string, evidenceIds?: string[]): { intent: string; recommendedStep: string; draft: string };
+export function hasUnverifiedActionClaim(draft: string): boolean;
+export function replyDeliveryDecision(input: { text: string; draft: string | null; confidence: number | null; threshold?: number; automaticGrounded?: boolean }): { deliveryState: DeliveryState; risk: RiskLevel; reasons: string[] };
 
 export function detectHardRisk(text: string, scenario?: string): { hard: boolean; reasons: string[] };
 

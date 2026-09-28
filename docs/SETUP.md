@@ -22,7 +22,7 @@ This parses the local fixtures, checks required scenarios, verifies unique IDs, 
 
 Create `.env.local` from `.env.example`. Set `MONGODB_URI`, `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5.6-luna`, and `OPENAI_REASONING_EFFORT=xhigh`. Keep `ESCALA_ENABLE_EXTERNAL_SEND=false`. The OpenAI key is used only by the Escala server; `DEEPSEEK_API_KEY` is for the Claude Code backend worker only. Never commit keys.
 
-## Planned application setup
+## Application setup
 
 Install dependencies and start the Next.js MVP from the repository root:
 
@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-The MVP persists synthetic conversations and decisions in MongoDB Atlas. It does not require Shopee credentials and must not send external messages or mutate orders. A Vercel token must be created by the project owner and added to ignored `.env.local` before deployment.
+The MVP persists synthetic conversations, local seller replies and decisions in MongoDB (Atlas or a local replica set). Transactions require a replica set. Missing OPENAI_API_KEY uses clearly labeled templates with null confidence; manual replies still work. Restart Next.js after adding the key. It does not require Shopee credentials and must not send external messages or mutate orders. A Vercel token must be created by the project owner and added to ignored `.env.local` before deployment.
 
 ## Verification checklist
 

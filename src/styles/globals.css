@@ -1160,6 +1160,47 @@ svg {
   font-size: 12px;
   padding: 19px 0 0;
 }
+.reply-composer {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+}
+.reply-composer h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.suggested-reply {
+  background: #f7f9fb;
+  border: 1px solid #e6e9ef;
+  border-radius: 5px;
+  padding: 13px;
+  margin: 14px 0;
+}
+.suggested-reply h4 {
+  font-size: 12px;
+  color: #66717e;
+  margin-bottom: 7px;
+}
+.suggested-reply p {
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.reply-approval {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.reply-approval input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
 .desktop-context {
   width: 292px;
   flex: 0 0 292px;

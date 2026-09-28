@@ -1,12 +1,13 @@
 const HARD_RISK_PATTERNS = [
   ["financial impact requires seller review", /\b(refund|refunds|refunded|charged|charge|payment|money|duplicate charge|double charged|reimburse|billing|paid twice)\b|hoàn tiền|bị trừ tiền|thanh toán|tính tiền|thu tiền/i],
-  ["order changes are not performed by Escala", /\b(cancel|cancellation|change my order|modify my order|order status|change address|change quantity)\b|hủy đơn|huỷ đơn|đổi đơn|đổi địa chỉ/i],
+  ["order changes are not performed by Escala", /\b(cancel|cancellation|change my order|modify my order|change address|change quantity|reship|reshipment|send a replacement|replacement is on the way)\b|hủy đơn|huỷ đơn|đổi đơn|đổi địa chỉ/i],
   ["delivery commitments need verified carrier information", /\b(guarantee|must arrive|deadline|before \d|by today|by tomorrow|promise delivery|arrive by)\b|cam kết giao|phải giao trước|giao đúng ngày/i],
-  ["complaint or reputation risk requires seller review", /\b(post .*public|publicly|social media|complaint|report you|lawsuit|legal action|regulator|regulatory)\b|đăng công khai|bóc phốt|khiếu nại|kiện|cơ quan chức năng/i],
+  ["complaint or reputation risk requires seller review", /\b(post .*public|publicly|social media|report you|lawsuit|legal action|regulator|regulatory)\b|đăng công khai|bóc phốt|khiếu nại|kiện|cơ quan chức năng/i],
   ["safety or health concerns require seller review", /\b(injur|injured|injury|unsafe|safety|allergy|allergic|poison|hazard|medical|health issue)\b|dị ứng|chấn thương|bị thương|không an toàn|sức khỏe|ngộ độc/i],
   ["account, identity, or security issues require seller review", /\b(account hacked|password|credential|identity|stolen account|unauthorized access|security breach|personal data)\b|mật khẩu|tài khoản bị hack|đánh cắp tài khoản|dữ liệu cá nhân/i],
   ["exceptional discounts or compensation require seller review", /\b(discount|coupon|compensation|compensate|free replacement|store credit|waive the fee)\b|giảm giá|mã giảm|bồi thường|đền bù/i],
   ["requested external actions need seller approval", /\b(send|issue|apply|dispatch|ship it|change|delete|publish)\b.{0,35}\b(now|immediately|for me|my order|the refund|a discount|a replacement)\b|gửi ngay|thực hiện giúp|xóa đơn/i],
+  ["replacement or reshipment requires seller approval", /\b(?:replace my|replace the|resend|reship|reshipment|send (?:me )?(?:a |another )?replacement|ship (?:a )?replacement)\b|gửi lại hàng|gửi hàng thay thế/i],
 ];
 
 const REQUIRED_SAFE_EVIDENCE = [
@@ -29,44 +30,61 @@ export function detectHardRisk(text, scenario = "") {
   return { hard: reasons.length > 0, reasons: [...new Set(reasons)] };
 }
 
-export function evaluateRecommendation({
-  text,
-  scenario,
-  confidence,
-  missingInformation = [],
-  evidenceIds = [],
-  threshold = 0.9,
-  hasApprovedAnswer = false,
-  sentiment,
-}) {
-  const risk = detectHardRisk(text, scenario);
-  if (risk.hard) return { action: "ESCALATE", reasons: risk.reasons };
-  if (scenario === "missing_evidence" || evidenceIds.length === 0) {
-    return { action: "ESCALATE", reasons: ["no verified evidence was retrieved"] };
-  }
-  if (missingInformation.length > 0) {
-    return { action: "ASK_CLARIFICATION", reasons: ["model identified missing information"] };
-  }
-  if (sentiment && (sentiment.label === "negative" || sentiment.label === "unknown")) {
-    return { action: "DRAFT_FOR_SELLER", reasons: ["tone needs human review; sentiment cannot authorize automatic action"] };
-  }
-  const cited = new Set(evidenceIds);
-  const fullyGrounded = REQUIRED_SAFE_EVIDENCE.every((id) => cited.has(id)) && hasApprovedAnswer;
-  const routineQuestion = scenario === "safe_faq" && /\b(available|availability|size|standard delivery|how long)\b/i.test(text);
-  if (!fullyGrounded) {
-    return { action: "DRAFT_FOR_SELLER", reasons: ["evidence did not pass the approved-answer grounding check"] };
-  }
-  if (!routineQuestion) {
-    return { action: "DRAFT_FOR_SELLER", reasons: ["only the reviewed routine FAQ is eligible for automatic reply"] };
-  }
-  if (!Number.isFinite(threshold) || threshold < 0.9 || threshold > 1 || !Number.isFinite(confidence) || confidence < threshold || confidence > 1) {
-    return { action: "DRAFT_FOR_SELLER", reasons: ["seller confirmation required because confidence is below threshold"] };
-  }
-  return { action: "AUTO_REPLY", reasons: ["reviewed routine FAQ, approved answer, complete evidence, and confidence threshold passed"] };
+/** Compatibility action projection of the single reply delivery gate. */
+export function evaluateRecommendation({ text, scenario, confidence, missingInformation = [], evidenceIds = [], threshold = .9, hasApprovedAnswer = false }) {
+  const grounded = REQUIRED_SAFE_EVIDENCE.every((id) => evidenceIds.includes(id)) && hasApprovedAnswer
+    && scenario === "safe_faq" && missingInformation.length === 0;
+  const decision = replyDeliveryDecision({ text, draft: replyTemplate(text, evidenceIds).draft,
+    confidence, threshold, automaticGrounded: grounded });
+  return { ...decision, action: decision.deliveryState === "AUTO_SEND" ? "AUTO_REPLY"
+    : missingInformation.length ? "ASK_CLARIFICATION" : "DRAFT_FOR_SELLER" };
 }
-
 export const APPROVED_AVAILABILITY_ANSWER =
   "Size M is currently listed as available. Standard delivery to Ho Chi Minh City is normally estimated at 2–4 business days after dispatch. This is an estimate, not a guarantee.";
+
+/** Reviewed fallback wording, never represented as model output or calibrated confidence. */
+export function replyTemplate(text, evidenceIds = []) {
+  const intent = detectIntent(text), vietnamese = routeLanguage(text) !== "english";
+  const choices = {
+    refund: ["Review refund request", "I can help review your refund request. Could you confirm your order number? No refund has been issued yet.", "Shop có thể kiểm tra yêu cầu hoàn tiền. Bạn gửi giúp mã đơn hàng nhé. Yêu cầu chưa được xử lý hoàn tiền."],
+    payment_dispute_and_refund: ["Review payment discrepancy", "I’m sorry about the payment issue. Please share the order number so we can verify the charge and review the request.", "Shop xin lỗi về vấn đề thanh toán. Bạn gửi mã đơn để shop kiểm tra giao dịch và yêu cầu nhé."],
+    cancellation: ["Review cancellation request", "I can review your cancellation request. Please confirm the order number; cancellation has not been confirmed yet.", "Shop có thể kiểm tra yêu cầu hủy đơn. Bạn gửi mã đơn nhé; đơn chưa được xác nhận hủy."],
+    wrong_item: ["Ask for order number and a photo", "I’m sorry you received a different item. Could you share your order number and a photo of the item and size label so we can check?", "Shop xin lỗi vì bạn nhận hàng khác với đơn đặt. Bạn gửi mã đơn và ảnh sản phẩm, nhãn size để shop kiểm tra nhé."],
+    damaged_item: ["Ask for a photo and order number", "I’m sorry the item arrived damaged. Could you share your order number and a photo of the damage so we can review it?", "Shop xin lỗi vì hàng bị hỏng. Bạn gửi mã đơn và ảnh phần hỏng để shop kiểm tra nhé."],
+    order_status: ["Ask buyer for order number", "I’m sorry you’re still waiting. Could you share your order number so we can check the shipment status?", "Bạn gửi mã đơn để shop kiểm tra tình trạng giao hàng nhé."],
+    delivery_complaint: ["Check shipment information", "I’m sorry you’re still waiting. Please share your order number so we can check the shipment status.", "Shop xin lỗi vì bạn vẫn đang chờ. Bạn gửi mã đơn để shop kiểm tra nhé."],
+    return_or_exchange: ["Check exchange details", "Could you share your order number, delivery date, and the size you need so we can check the exchange options?", "Bạn gửi mã đơn, ngày nhận hàng và size muốn đổi để shop kiểm tra phương án đổi hàng nhé."],
+    positive_feedback: ["Thank the buyer", "Thank you for your feedback! We’re glad you’re happy with your purchase.", "Cảm ơn bạn đã phản hồi! Shop rất vui vì bạn hài lòng với sản phẩm."],
+    product_information: ["Confirm product details", "Could you share the product name or link so I can check the available options for you?", "Bạn gửi tên hoặc link sản phẩm để shop kiểm tra thông tin nhé."],
+    stock_check: ["Check available options", "Could you share the product name or link and the option you need so I can check availability?", "Bạn gửi tên sản phẩm và lựa chọn cần mua để shop kiểm tra còn hàng nhé."],
+  };
+  if (intent === "product_and_shipping_faq" && REQUIRED_SAFE_EVIDENCE.every((id) => evidenceIds.includes(id))) {
+    return { intent, recommendedStep: "Reply with product and delivery information", draft: APPROVED_AVAILABILITY_ANSWER };
+  }
+  const selected = choices[intent] ?? ["Review uncertain intent", "Could you share a little more detail about the product or order and what you need help with?", "Bạn cho shop thêm thông tin về sản phẩm hoặc đơn hàng và vấn đề cần hỗ trợ nhé."];
+  return { intent, recommendedStep: selected[0], draft: selected[vietnamese ? 2 : 1] };
+}
+
+export function hasUnverifiedActionClaim(draft) {
+  const claims = normalizeText(draft).replace(/\bno refund has been issued yet\b/g, "");
+  return /\b(?:refund (?:has been|was|is) (?:issued|processed|approved)|(?:i|we)(?: have)? (?:cancelled|canceled|refunded|shipped|dispatched)|order (?:has been|was|is) cancel(?:led|ed)|replacement is on the way|guarantee(?:d)? (?:delivery|arrival)|will (?:refund|cancel|reship|replace)|refund approved)\b|\b(?:da hoan tien|da huy don|da gui hang thay the|se hoan tien|se huy don|se gui hang thay the|cam ket giao)\b/i.test(claims);
+}
+
+/** This gate never takes sentiment, urgency, or priority as permission. */
+export function replyDeliveryDecision({ text, draft, confidence, threshold = .9, automaticGrounded = false }) {
+  // An explicit non-guarantee in reply wording is not a delivery promise.
+  // Buyer requests are checked unchanged, including requests for guarantees.
+  const replyRiskText = (draft ?? "").replace(/\b(?:not a guarantee|cannot guarantee|can't guarantee|is not guaranteed)\b/gi, "");
+  const risk = detectHardRisk(`${text}\n${replyRiskText}`);
+  const reasons = [...risk.reasons];
+  const validThreshold = Number.isFinite(threshold) && threshold >= .9 && threshold <= 1;
+  const confident = validThreshold && Number.isFinite(confidence) && confidence >= threshold && confidence <= 1;
+  if (!confident) reasons.push("Reply confidence is unavailable or below the automatic-send threshold");
+  if (!draft?.trim()) return { deliveryState: "MANUAL_ONLY", risk: risk.hard ? "high" : "low", reasons };
+  if (risk.hard) return { deliveryState: "APPROVAL_REQUIRED", risk: "high", reasons };
+  if (!automaticGrounded) reasons.push("Draft is not a verified automatic reply; seller review required");
+  return { deliveryState: confident && automaticGrounded ? "AUTO_SEND" : "REVIEW_REQUIRED", risk: "low", reasons };
+}
 
 // Detection normalization never replaces the persisted buyer message.
 export function normalizeText(text) {
@@ -95,6 +113,9 @@ export function vietnameseSentiment(text) {
 }
 export function detectIntent(text) {
   const normalized = normalizeText(text);
+  if (/\bordered (?:the )?(?:medium|small|large|size .+) (?:but |and )?(?:got|received)\b/.test(normalized)) return "wrong_item";
+  if (/\bwhere (?:is|s) my (?:fucking |damn )?(?:package|parcel|shipment)\b/.test(normalized)) return "order_status";
+  if (/\bcome in (?:black|white|blue|red)\b/.test(normalized)) return "product_information";
   const patterns = [
     ["wrong_item", ["giao nham", "gui nham", "nhan nham", "sai mau", "sai size", "dat mau", "wrong item", "wrong color", "wrong size", "ordered the", "got black instead"]],
     ["damaged_item", ["bi vo", "bi be", "bi hong", "rach", "mop", "damaged", "broken", "cracked"]],

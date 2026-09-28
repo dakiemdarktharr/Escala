@@ -216,13 +216,26 @@ export function ContextPanel({
                           : readable(event.action)}
                       </strong>
                       <p>
-                        {event.actor === "seller"
+                        {event.reply
+                          ? "Reply saved · simulated delivery"
+                          : event.actor === "seller"
                           ? "Seller decision recorded"
                           : "Recommendation prepared"}
                       </p>
                       <time dateTime={event.createdAt}>
                         {dateLabel(event.createdAt, true)}
                       </time>
+                      {event.reply && (
+                        <details className="audit-details">
+                          <summary>Reply delivery & edits</summary>
+                          <p>Source: {readable(event.reply.source)} · {event.reply.edited ? "Edited by seller" : "Unedited"}</p>
+                          <p>Risk: {event.reply.risk} · {readable(event.reply.deliveryState)}</p>
+                          <p>Confidence: {event.reply.confidence === null ? "Unavailable" : `${Math.round(event.reply.confidence * 100)}%`}</p>
+                          <p>Sensitive-action approval: {event.reply.sellerApproved ? "Explicitly recorded" : event.reply.risk !== "high" ? "Not required" : "Not recorded"} · Simulated delivery</p>
+                          {event.reply.originalDraft && <p>Original draft: {event.reply.originalDraft}</p>}
+                          <p>Final reply: {event.reply.finalText}</p>
+                        </details>
+                      )}
                       {event.reasonCodes.length > 0 && (
                         <details className="audit-details">
                           <summary>View reasons</summary>

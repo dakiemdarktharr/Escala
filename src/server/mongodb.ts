@@ -4,6 +4,7 @@ import type {
   AuditRecord,
   RecommendationRecord,
   InboxThreadSummary,
+  MessageRecord,
 } from "@/domain/contracts";
 
 /** A synthetic inbox thread persisted for the demo seed. */
@@ -12,6 +13,7 @@ export interface SyntheticThreadRecord extends InboxThreadSummary {
   channel: string;
   analysisVersion?: string;
   analyzedAt?: string;
+  messageSequence?: number;
 }
 
 /** A synthetic knowledge-base entry persisted for the demo seed. */
@@ -67,6 +69,10 @@ export async function getDb(): Promise<Db> {
 export async function getThreadsCollection(): Promise<Collection<SyntheticThreadRecord>> {
   const db = await getDb();
   return db.collection<SyntheticThreadRecord>("threads");
+}
+
+export async function getMessagesCollection(): Promise<Collection<MessageRecord>> {
+  return (await getDb()).collection<MessageRecord>("messages");
 }
 
 export async function getRecommendationsCollection(): Promise<Collection<RecommendationRecord>> {

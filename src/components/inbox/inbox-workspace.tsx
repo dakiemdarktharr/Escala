@@ -34,7 +34,9 @@ export function InboxWorkspace({
   const [queueOpen, setQueueOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [contextTab, setContextTab] = useState<ContextTab>("evidence");
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<
+    Record<string, { text: string; recommendationId?: string }>
+  >({});
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -288,8 +290,8 @@ export function InboxWorkspace({
             <Icon name={mode === "sample" ? "info" : "shield"} size={15} />
             <span>
               {mode === "sample"
-                ? "Sample preview. Illustrative recommendations; decisions stay in this browser session and reset on reload."
-                : "Demo workspace with synthetic buyer messages. Decisions are recorded here; no messages are sent to buyers."}
+                ? "Sample preview. Illustrative recommendations and replies stay in this browser session and reset on reload."
+                : "Synthetic buyer messages. Replies are saved in Escala with simulated delivery; no marketplace messages or order changes occur."}
             </span>
             {mode === "sample" && (
               <button className="text-button" onClick={() => changeMode("api")}>
@@ -325,8 +327,8 @@ export function InboxWorkspace({
                   onContextOpen={() => setContextOpen(true)}
                   onQueueOpen={() => setQueueOpen(true)}
                   drafts={drafts}
-                  onDraftChange={(key, text) =>
-                    setDrafts((current) => ({ ...current, [key]: text }))
+                  onDraftChange={(key, draft) =>
+                    setDrafts((current) => ({ ...current, [key]: draft }))
                   }
                   onChanged={() => {
                     void loadQueue(true);

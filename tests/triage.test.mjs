@@ -39,11 +39,11 @@ test("temporal urgency, sentiment, risk, and waiting priority stay separate", as
   assert.equal(aged.urgency, "low");
   assert.equal(aged.priorityScore, 80);
 });
-test("invalid confidence thresholds and unknown tone never grant automation", () => {
+test("invalid confidence thresholds never grant automation; tone alone is not risk", () => {
   const input = { text: "Is size M available?", scenario: "safe_faq", confidence: .99,
     evidenceIds: ["kb-product-blue-linen-shirt-v1", "kb-shipping-standard-v1", "kb-approved-answer-availability-v1"], hasApprovedAnswer: true };
   for (const threshold of [NaN, -.1, 0, .89, 1.1]) assert.notEqual(evaluateRecommendation({ ...input, threshold }).action, "AUTO_REPLY");
-  assert.notEqual(evaluateRecommendation({ ...input, sentiment: { label: "unknown" } }).action, "AUTO_REPLY");
+  assert.equal(evaluateRecommendation({ ...input, sentiment: { label: "unknown" } }).action, "AUTO_REPLY");
   assert.equal(detectHardRisk("tranquility matters").hard, false);
 });
 test("missing English assets return explicit unavailable sentiment", () => {

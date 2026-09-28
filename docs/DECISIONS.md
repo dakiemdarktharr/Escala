@@ -79,3 +79,34 @@ Escala's evidence lookup, OpenAI candidate/draft adapter, policy confidence gate
 Dependency install succeeded; introduced dependency advisories were resolved by the patched Transformers.js release (npm installation audit: zero vulnerabilities). Full suite with `ESCALA_RUN_INTEGRATION=1`: **51 passed, zero skipped**. Lint, typecheck, 11-message/7-document demo validation, and production build passed. The production HTTP test confirmed MongoDB-backed cached analyses, recommendation/audit transactions, unsafe reply rejection, inbox priority order, exact messages, cached-analysis refresh, and persistence across an app restart. The final test command ran outside the sandbox because tsx's Windows user-information lookup was blocked inside it. Atlas and live OpenAI generation were not tested; the local test uses no credentials and no external sends.
 
 Data preparation reproduced the same 349/75/75 split and one exclusion. Re-evaluation reproduced baseline/candidate macro F1 0.8286/0.9681. Source model hash unchanged. fp32 ONNX export matched all 75 labels, max logit difference 0.0000203848; actual Node tokenizer/inference matched all 75 labels with confidence difference below 0.001. This is numerical conversion verification, not new training or proof of real-customer accuracy. A production server and browser inbox were exercised locally with synthetic MongoDB seed data.
+
+## 2026-09-28 — Seller reply workflow
+
+The owner requested actionable seller communication rather than generic escalation. Existing runtime policy, recommendation service, Mongo repository, shared contracts, inbox components and audit log were inspected before implementation; the implementation map was given before edits. No work was added to the parent standalone project.
+
+### Existing files modified
+
+- `src/server/policy.mjs` / declaration: one deterministic reply-delivery gate plus reviewed template wording and prohibited generated-action checks; old action evaluator projects that gate rather than maintaining a second policy. Narrow intent fixes for wrong size, profane shipment status and color questions. Removed order-status/generic-complaint-as-order-side-effect mistakes, added replacement/reshipment gates. Priority weights, routing and Vietnamese sentiment rules unchanged.
+- `src/server/inbox-service.ts`: risky messages now draft; honest missing-key/failed-generation fallback; shared reply send implementation; seller approval, threshold/grounding, stale/declined/duplicate checks; message/audit transaction and original/final provenance.
+- `src/server/mongodb.ts`, `repository.ts`: messages collection in the existing database, idempotent buyer materialization, per-thread seller-message sequence and unique request IDs. Buyer text/analysis inputs and old audit data preserved.
+- `src/domain/contracts.ts`: single shared delivery-state/reply/audit contract extended; no copied types.
+- Existing decision API route: supports decline/handoff, directs legacy delivery-like decisions to the reply workflow.
+- Existing frontend: `api.ts`, `inbox-workspace.tsx`, `thread-workspace.tsx`, `recommendation-panel.tsx`, `context-panel.tsx`, `sample-data.ts`, `globals.css`: one client reply call, unconditional composer, edit/discard/approve/send, persisted seller history and provenance display. Sample preview remains explicitly nonpersistent.
+- `data/demo/messages.json`: six additional synthetic reply cases, 17 total; expected annotations remain test data, not runtime answers.
+- Existing `tests/inbox-integration.test.mjs`, `policy.test.mjs`, `triage.test.mjs`: updated delivery semantics, SDK protocol stub, actual Mongo/HTTP restart/approval/idempotency/edit/manual checks, tone-independent risk and preserved priority regressions.
+- `README.md`, `docs/POLICY.md`, `ARCHITECTURE.md`, `SETUP.md`, `DEMO-SCRIPT.md`, this decision log: workflow/configuration/verification and explicit limits.
+
+### New files
+
+- `src/app/api/threads/[threadId]/replies/route.ts`: no existing endpoint persisted a seller message. This is the single message-delivery route for all reply modes; it calls the existing service rather than a second backend.
+- `tests/reply-policy.test.mjs`: focused regression matrix for independent risk/confidence/delivery, requested messages and unsafe generated claims; existing triage tests continue to protect priority/sentiment.
+
+No new frontend, backend application, database system, wrapper modules or model artifacts. Old project files were not imported in this task. Obsolete escalation-only reply semantics and duplicate draft-edit panel ownership were replaced in their existing owners; the original historical determination-engine prototype remains outside runtime.
+
+### Verification and limits
+
+Full suite with integration: **60 passed, zero skipped**; lint/typecheck/build and 17-message/7-document validation passed. HTTP tests use real isolated temporary MongoDB, restart Next.js, preserve messages/events, reject approval and automatic-send bypass, and confirm unchanged priorities. SDK candidate handling uses an explicitly test-only local Responses protocol stub (0.40/0.96 confidence); no live generation is claimed.
+
+Actual browser checks opened all requested messages, sent safe suggestions, approved sensitive replies, edited text, declined/overrode a suggestion, sent a manual Vietnamese reply without a recommendation, and confirmed reload persistence and original/final audit display. The existing demo MongoDB was retained during server restart, preserving earlier seller events. Local template confidence is null and the exact missing key is shown.
+
+English source SHA256 remains `fe9f3a0ce17660e048ada03c4db1f26063e9ff6ff8f6657d16df5230a8993dba`; ONNX SHA256 remains `a532971e33c196e4298c0a262553071f1e96ecd879f8c97c18e9b78fe4460aa1`. No sentiment training/weight changes. No Atlas, production connector, public multi-user deployment or live OpenAI evaluation claimed. Risk/intent/claim checks are limited phrases and templates, model confidence is uncalibrated, and arbitrary free-form replies require seller review. Seller approval sends only simulated communication; it never executes refunds/orders.

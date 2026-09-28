@@ -8,6 +8,7 @@ import {
   getKnowledgeBaseCollection,
   getRecommendationsCollection,
   getThreadsCollection,
+  getMessagesCollection,
 } from "./mongodb";
 import type { KnowledgeBaseRecord, SyntheticThreadRecord } from "./mongodb";
 
@@ -96,6 +97,15 @@ export async function seedDatabase(): Promise<{ threads: number; knowledgeBase: 
   ]);
 
   const knowledgeBase = JSON.parse(knowledgeRaw) as KnowledgeBaseRecord[];
+  const messageCollection = await getMessagesCollection();
+  await upsertById(messageCollection, messages.map((message) => ({
+    id: message.id, threadId: message.threadId, role: "buyer" as const,
+    text: message.text, createdAt: message.receivedAt, sequence: 0,
+  })));
+  await messageCollection.createIndex({ threadId: 1, createdAt: 1 });
+  await messageCollection.createIndex({ threadId: 1, requestId: 1 }, {
+    unique: true, partialFilterExpression: { requestId: { $type: "string" } },
+  });
 
   const collection = await getThreadsCollection();
   const existingIds = new Set((await collection.find({}, { projection: { id: 1 } }).toArray()).map((thread) => thread.id));

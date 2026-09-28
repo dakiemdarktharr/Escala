@@ -1,33 +1,15 @@
-# Escala judge-facing demo script
+# Escala seller-response demo
 
-Target duration: 3–5 minutes. Use the local seeded inbox; do not depend on network access or live marketplace credentials.
+Use the existing inbox with synthetic seed data. All deliveries are simulated in MongoDB; no marketplace message, refund or cancellation occurs.
 
-## 1. Frame the problem — 30 seconds
+1. Open **Buyer reply-black**. Prepare recommendation. With no API key the suggestion is explicitly a reviewed template, confidence unavailable, review required. It asks for the product link rather than inventing black availability. Edit and send; show the seller message.
+2. Open **Buyer reply-wrong-size**. The factual report remains neutral, priority 47. Prepare a photo/order-number question; edit/send and inspect Activity → Reply delivery & edits for original/final wording. Reload: the reply remains.
+3. Open **Buyer reply-shipment**. Profanity is negative, shipment intent is low risk. Send a normal order-number question without turning hostility into a financial-risk decision.
+4. Open **Buyer reply-cancel** and **Buyer reply-refund**. The requests can be neutral and temporally low urgency but have high business risk. A useful draft stays visible. Approve & send sends only the reply. Editing into the composer requires explicit sensitive-action approval; neither draft claims the action was completed.
+5. Open **Buyer vn-hostile**. Vietnamese rules, negative/refund, low temporal urgency, priority 85 stay visible. Approve the Vietnamese acknowledgement and reload.
+6. Open **Buyer reply-uncertain**. The clarification draft stays visible for review. Decline it, then write/send a new manual response. Without live generation confidence is null; the numeric low-confidence path is covered by the test-only protocol stub, not presented as real AI in this demo.
+7. Open **Buyer vn-positive** before generating a recommendation. The composer is available immediately. Write/send a thank-you reply, reload, and show its manual-source audit.
 
-“Marketplace sellers receive many repetitive questions, but the messages that matter most—payment, cancellation, delivery commitments, and complaints—need careful judgment. Escala recommends what should happen next, not just what an AI might say.”
+Automatic delivery is eligibility, not a claim of a live connector. With configured live generation it additionally needs confidence >=0.90, exact reviewed wording, required evidence, known intent and no risk. The test suite exercises high-confidence automatic simulated delivery using a local Responses API protocol stub. Do not describe that as a live OpenAI run. Fallback templates cannot auto-send.
 
-Point out that the urgency rank is transparent prototype prioritization, not a validated business metric.
-
-## 2. Safe FAQ — 40 seconds
-
-Open `msg-safe-001`. Show the retrieved product and shipping evidence, the grounded answer, and `AUTO_REPLY`. Explain that the action is allowed only because this is a routine FAQ with reliable evidence and no hard-risk signal.
-
-## 3. Ambiguity — 35 seconds
-
-Open `msg-ambiguous-001`. Show that the buyer says an item does not fit but gives no order or product detail. Escala chooses `ASK_CLARIFICATION` and proposes one targeted question instead of guessing about eligibility.
-
-## 4. High-risk and urgency — 60 seconds
-
-Open `msg-highrisk-001` and then `msg-urgent-001`. Show payment/refund risk and delivery deadline factors. The queue puts the urgent item near the top and explains why. The policy still blocks automatic action and chooses `ESCALATE` when a financial dispute or unauthorized delivery guarantee is present.
-
-## 5. Seller control and audit — 45 seconds
-
-Open a seller-draft case, approve or edit the suggested text, and show the status change plus audit timeline event. Emphasize that seller decisions are recorded and the external-send toggle is disabled in the prototype.
-
-## 6. Safe failure — 30 seconds
-
-Open the missing-evidence or model-failure fixture. Show the limitation message, absent/failed evidence state, and non-automatic fallback. “No reliable evidence” must never become a confident invented answer.
-
-## Close — 20 seconds
-
-“The core vertical slice is message → evidence → risk and urgency → deterministic policy → visible action → audit. The next validation step is to compare recommendations with human decisions on 10–20 real representative messages before adding live integrations.”
+Remaining validation: representative seller-reviewed reply data, calibrated confidence/grounding evaluation, broader risk/intent and Vietnamese coverage. A few synthetic examples do not establish real-customer accuracy. Existing priority and sentiment models are unchanged.

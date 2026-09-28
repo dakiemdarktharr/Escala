@@ -5,10 +5,12 @@ import type {
   EvidenceRecord,
   InboxThreadSummary,
   RecommendationAction,
+  RecommendationRecord,
+  SendReplyResponse,
   RiskLevel,
   ThreadDetailResponse,
 } from "@/domain/contracts";
-import type { InboxClient } from "./api";
+import { RequestError, type InboxClient } from "./api";
 
 // Explicit UI preview only. Fixture expected* fields are illustrative oracles,
 // never used to classify API data or make a production policy decision.
@@ -17,6 +19,20 @@ const sampleDrafts: Record<string, string | null> = {
     "Hi! Size M of the Blue Linen Shirt is currently listed as available. Standard delivery to Ho Chi Minh City is estimated at 2–4 business days after dispatch. This is an estimate, rather than a guaranteed arrival time.",
   ambiguous:
     "Could you share your order number, the item you’d like to exchange, and when it was delivered? I’ll check the exchange details for you.",
+  high_risk_payment: "I’m sorry about the duplicate charge. I can review the payment issue. Could you confirm your order number?",
+  urgent_deadline: "I understand the delivery deadline matters. I can check the order’s delivery information before confirming what is possible.",
+  complaint_escalation: "I’m sorry about the experience. I can review your cancellation request. Could you confirm the order number?",
+  missing_evidence: "Could you share the product model and the replacement part you need so I can check compatibility?",
+  model_failure: "Thanks for your question. I’ll check the product care information before confirming washing instructions.",
+};
+const sampleSteps: Record<string, string> = {
+  safe_faq: "Reply with product and delivery information",
+  ambiguous: "Ask buyer for order and item details",
+  high_risk_payment: "Review duplicate payment request",
+  urgent_deadline: "Review delivery deadline",
+  complaint_escalation: "Review cancellation request",
+  missing_evidence: "Ask for product details",
+  model_failure: "Check product care information",
 };
 const sampleRisk: Record<string, RiskLevel> = {
   safe_faq: "low",
@@ -98,13 +114,18 @@ function fixtures(): ThreadDetailResponse[] {
           ? { orderId: "8831", productName: "Blue Linen Shirt" }
           : {}),
       };
-      const recommendation = {
+      const recommendation: RecommendationRecord = {
         id: `sample-rec-${index}`,
         threadId: thread.id,
         action: message.expectedAction as RecommendationAction,
         intent: thread.intent,
         risk: sampleRisk[message.scenario],
-        confidence: message.modelStatus === "FAILED" ? null : 0.94,
+        confidence: null,
+        recommendedStep: sampleSteps[message.scenario],
+        deliveryState: sampleRisk[message.scenario] === "high" ? "APPROVAL_REQUIRED" : "REVIEW_REQUIRED",
+        confidenceThreshold: 0.9,
+        draftSource: "template",
+        status: "pending",
         draft: sampleDrafts[message.scenario] || null,
         reasons: message.safeFallback
           ? [message.safeFallback]
@@ -113,9 +134,7 @@ function fixtures(): ThreadDetailResponse[] {
         policyVersion: "sample-preview-1",
         modelStatus: "fallback" as const,
         modelNotice:
-          message.modelStatus === "FAILED"
-            ? "The model was unavailable. No answer was generated; review the evidence and write a draft."
-            : "This is a fixed sample recommendation. No model was called.",
+          "This is a fixed sample template. No model was called; confidence is unavailable.",
         createdAt: receivedAt,
       };
       return {
@@ -163,6 +182,7 @@ function fixtures(): ThreadDetailResponse[] {
 /** Per-workspace, in-memory preview. A reload resets all preview decisions. */
 export function createSampleClient(): InboxClient {
   const store = fixtures();
+  const replies = new Map<string, SendReplyResponse>();
   return {
     async inbox() {
       return {
@@ -189,6 +209,7 @@ export function createSampleClient(): InboxClient {
       item.recommendation = {
         ...item.recommendation,
         id: `sample-rec-${crypto.randomUUID()}`,
+        status: "pending",
         createdAt: new Date().toISOString(),
       };
       const audit: AuditRecord = {
@@ -206,6 +227,7 @@ export function createSampleClient(): InboxClient {
     async decide(id, input) {
       const item = store.find((entry) => entry.recommendation?.id === id);
       if (!item?.recommendation) throw new Error("Sample not found");
+      if (input.decision === "decline") item.recommendation.status = "declined";
       if ("editedDraft" in input && input.editedDraft)
         item.recommendation.draft = input.editedDraft;
       const audit: AuditRecord = {
@@ -222,6 +244,44 @@ export function createSampleClient(): InboxClient {
       };
       item.audit.push(audit);
       return structuredClone({ recommendation: item.recommendation, audit });
+    },
+    async reply(id, input) {
+      const previous = replies.get(input.requestId);
+      if (previous) return structuredClone(previous);
+      const item = store.find((entry) => entry.thread.id === id);
+      if (!item) throw new RequestError("Sample conversation not found.");
+      const recommendation = input.recommendationId ? item.recommendation : null;
+      if (input.recommendationId && (recommendation?.id !== input.recommendationId || recommendation.status !== "pending")) {
+        throw new RequestError("This sample suggestion is no longer pending. Discard it and write a new reply.");
+      }
+      if (input.mode === "automatic") throw new RequestError("Sample templates have no model confidence and require seller review.");
+      // Preview-only affordance; the API's deterministic policy remains authoritative.
+      const risky = item.recommendation?.risk === "high" || /refund|cancel|payment|discount|compensat|guarantee|replace|reship/i.test(input.text);
+      if (risky && !input.sellerApproved) throw new RequestError("Approve this sensitive reply before sending.", "APPROVAL_REQUIRED");
+      const createdAt = new Date().toISOString();
+      const message = {
+        id: crypto.randomUUID(), threadId: id, role: "seller" as const,
+        text: input.text.trim(), createdAt, delivery: "simulated" as const,
+        requestId: input.requestId, recommendationId: input.recommendationId,
+      };
+      const edited = Boolean(recommendation && recommendation.draft !== message.text);
+      const audit: AuditRecord = {
+        id: crypto.randomUUID(), threadId: id, type: "seller_decision", actor: "seller",
+        action: "reply_sent", reasonCodes: ["Sample reply only. Resets on reload."],
+        evidenceIds: recommendation?.evidence.map((entry) => entry.id) ?? [], createdAt,
+        reply: {
+          messageId: message.id, originalDraft: recommendation?.draft ?? null,
+          finalText: message.text, edited, source: recommendation ? edited ? "edited_suggestion" : "suggestion" : "manual",
+          risk: risky ? "high" : "low", deliveryState: risky ? "APPROVAL_REQUIRED" : "REVIEW_REQUIRED",
+          confidence: recommendation?.confidence ?? null, sellerApproved: Boolean(input.sellerApproved), delivery: "simulated",
+        },
+      };
+      if (recommendation) recommendation.status = "sent";
+      item.messages.push(message);
+      item.audit.push(audit);
+      const result = { message, audit, recommendation };
+      replies.set(input.requestId, structuredClone(result));
+      return structuredClone(result);
     },
   };
 }

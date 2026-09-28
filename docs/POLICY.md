@@ -1,79 +1,40 @@
-# Escala Policy & Action Engine
+# Escala reply policy
 
-## Purpose
+Runtime policy version: `escala-policy-3.0`. The seller is already the reviewing person. Refunds and cancellations require seller approval, not a default handoff to another person.
 
-The policy engine is the deterministic safety boundary between model suggestions and seller-facing actions. It is independently testable and must remain authoritative even when an LLM produces a confident answer.
+## Independent properties
 
-## Hard-risk categories
+Sentiment is tone; intent is what the buyer wants; temporal urgency is time pressure; priority ranks attention. Reply confidence and deterministic business risk are separate. None of sentiment, urgency or priority authorizes delivery. Existing priority weights and Vietnamese routing/tone rules are preserved.
 
-Any of these signals blocks automatic sending:
+## Delivery state
 
-- refund, payment, charge, or financial dispute;
-- cancellation or order-state mutation;
-- legal, safety, regulatory, or health complaint;
-- account, identity, credential, privacy, or security issue;
-- exceptional discount, compensation, or unauthorized commitment;
-- legal, safety, or regulatory complaint;
-- account, identity, credential, or security issue;
-- exceptional discount, compensation, or unauthorized commitment;
-- threat of public complaint or escalation;
-- missing, conflicting, or unreliable evidence;
-- low confidence or a failed grounding check;
-- a requested external side effect that has not been approved.
+| State | Conditions | Seller workflow |
+| --- | --- | --- |
+| `MANUAL_ONLY` | No usable draft | Always-present manual composer; sensitive replies still need explicit approval |
+| `APPROVAL_REQUIRED` | Refund, payment, cancellation, order change, compensation/discount, replacement/reshipment side effect, delivery commitment, legal/public threat, safety/security or existing policy-sensitive category | Draft remains visible; Approve & send, Edit, Decline, or write a new reply |
+| `AUTO_SEND` | Low risk, valid confidence at/above threshold, reviewed exact wording, required retrieved evidence, known intent, no missing facts, live successful candidate | Eligible for simulated automatic sending; seller can send/edit/decline before delivery |
+| `REVIEW_REQUIRED` | Safe draft with low/unavailable confidence, uncertain intent, incomplete grounding or unreviewed free-form wording | Suggestion remains visible; send after review, edit, decline or write manually |
 
-## Rule precedence
+Risk and confidence are independent. A high-confidence refund remains approval-required; a risky low-confidence reply shows both reasons. Ordinary complaint acknowledgements and shipment-status questions are low risk unless other policy-sensitive signals appear. An explicit "not a guarantee" disclaimer in reply wording is not a commitment; an actual buyer request for a guarantee is checked unchanged.
 
-```text
-if hard_risk_flag:
-    ESCALATE
-else if missing_required_information:
-    ASK_CLARIFICATION
-else if grounded_faq and confidence >= threshold and no_risk_flag:
-    AUTO_REPLY
-else:
-    DRAFT_FOR_SELLER
-```
+`ESCALA_CONFIDENCE_THRESHOLD` defaults to `0.90`, inclusive. Allowed configuration is 0.90–1.00. Invalid configuration disables automation. Confidence is a model self-report, not calibrated probability, sentiment confidence, or a validation score. Fallback templates have null confidence and never qualify for automatic delivery.
 
-Hard-risk rules take precedence over model confidence. Fuzzy similarity, sentiment, and urgency signals can inform explanations but cannot independently grant permission to auto-send.
+## Drafting and grounding
 
-## Action requirements
+The existing OpenAI Responses adapter drafts even for risky messages. Raw buyer text is untrusted input. It uses supplied evidence, may acknowledge problems or ask for missing information without inventing product facts, and is told that no refund/cancellation/order action has occurred. Deterministic checks reject recognized completed-action/commitment claims and malformed output. Regex checks are not exhaustive natural-language verification: arbitrary free-form drafts remain seller-reviewed. Automatic delivery requires exact reviewed wording and all required evidence; missing product details lead to a question, not invented stock availability.
 
-### `AUTO_REPLY`
+No `OPENAI_API_KEY` means no live generation. The notice names that missing variable. Reviewed English/Vietnamese fallback templates are explicitly labeled templates with confidence unavailable, not fake AI output. Model failure/invalid output also yields a labeled fallback. The seller can always reply manually.
 
-Requires routine FAQ intent, reliable evidence, a grounded draft, confidence at or above the configured threshold, and no hard-risk or unauthorized promise.
+## Authoritative send gate
 
-### `DRAFT_FOR_SELLER`
+One route, `POST /api/threads/:threadId/replies`, handles all reply modes. It checks the thread, final edited text, current threshold, recommendation ownership/status/version, automatic eligibility and explicit sensitive-action approval. Changing a safe draft to a refund or commitment cannot bypass approval. Low-confidence or edited suggestions cannot use automatic mode. Seller approval of a communication does not execute the underlying refund/cancellation or any marketplace operation.
 
-Used for medium confidence, mild ambiguity, or a safe draft that still needs seller confirmation. The UI shows the draft, evidence, detected intent, confidence, and approval reason.
+Every request has a client request ID. A retry returns the existing message; reuse for different content is rejected. Sending a suggestion consumes its pending state atomically, so duplicate sends/declined/obsolete suggestions are blocked. Manual replies remain available after a suggestion is consumed. The existing decision route records decline or explicit handoff decisions; historical approve/edit decisions no longer imply a delivery.
 
-### `ASK_CLARIFICATION`
+## Persistence and audit
 
-Used when a necessary order, product, quantity, date, or other fact is missing. The system asks one targeted question and does not guess.
+MongoDB remains the only store. Seed buyer messages are idempotently materialized into its `messages` collection. Seller replies use the same shared `MessageRecord`, persist with simulated delivery, and receive a monotonic per-thread sequence (fixture dates are synthetic and may be in the future). A transaction saves message, audit, pending-status transition, and unread state together. A Mongo replica set is required for transactions.
 
-### `ESCALATE`
+The existing audit retains original draft, final text, edited flag, source, confidence, delivery state, risk, explicit seller approval, evidence IDs, policy version, timestamp and message ID. Decline gets an event too. Buyer text and timestamps remain the inputs to cached triage; sending does not silently rewrite queue priority. Restarting Next.js against the same Mongo database retains all messages/events.
 
-Used for hard-risk, unsupported, contradictory, out-of-scope, or side-effect cases. The recommendation includes risk factors, urgency, evidence or evidence absence, and a suggested next step.
-
-## Urgency explanation
-
-As of policy `escala-policy-2.0`, the runtime UI distinguishes temporal urgency from business risk and queue priority. Explicit deadlines/time pressure raise urgency. A refund's financial risk does not itself invent a deadline. Cached intent, negative sentiment, abusive-language/direct-demand flags, and waiting time raise attention priority with visible reasons. Refund and order-action rules still block automation, including accented and unaccented Vietnamese. Unknown or negative sentiment cannot grant automatic replies, and an invalid/below-0.90 configured threshold fails closed. Seller reply decisions on high-risk/escalated recommendations are rejected by the API; escalation remains available.
-
-The prototype ranks urgency from visible signals:
-
-- delivery or response deadline;
-- payment or financial impact;
-- order-status risk;
-- complaint or escalation language;
-- customer sentiment;
-- time waiting without response;
-- likelihood of irreversible loss or reputational damage.
-
-The UI must show both a priority level and the reasons, for example: “High urgency — delivery deadline within 24 hours, customer requests cancellation, and payment status is unresolved.” Do not present the rank as a validated business metric.
-
-## Safe fallback
-
-When no reliable evidence is retrieved or the model fails, the system must not fabricate a response. It displays a clear limitation such as “No verified answer generated; seller review required,” records the failure reason, and selects a non-automatic action.
-
-## Audit requirements
-
-Record one audit event for every recommendation and every seller decision, including policy version, evidence IDs, reason codes, urgency factors, action, timestamp, and whether a draft was approved, edited, rejected, or escalated.
+External sends and all order mutations remain unimplemented, even if an environment flag is changed. Local replies are simulated only. Authentication, production authorization and connector delivery receipts are future work; this synthetic demo is not ready for public multi-user operation.

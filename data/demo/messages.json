@@ -221,5 +221,113 @@
     "expectedEvidenceIds": [],
     "modelStatus": "AVAILABLE",
     "safeFallback": null
+  },
+  {
+    "id": "msg-reply-black-001",
+    "threadId": "thread-reply-black-001",
+    "scenario": "reply_workflow",
+    "receivedAt": "2026-10-31T10:55:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer reply-black",
+    "text": "Hi, does this come in black?",
+    "expectedIntent": "product_information",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-reply-wrong-size-001",
+    "threadId": "thread-reply-wrong-size-001",
+    "scenario": "reply_workflow",
+    "receivedAt": "2026-10-31T10:55:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer reply-wrong-size",
+    "text": "I ordered medium but got large.",
+    "expectedIntent": "wrong_item",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-reply-shipment-001",
+    "threadId": "thread-reply-shipment-001",
+    "scenario": "reply_workflow",
+    "receivedAt": "2026-10-31T10:55:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer reply-shipment",
+    "text": "where is my fucking package",
+    "expectedIntent": "order_status",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-reply-cancel-001",
+    "threadId": "thread-reply-cancel-001",
+    "scenario": "reply_workflow",
+    "receivedAt": "2026-10-31T10:55:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer reply-cancel",
+    "text": "Cancel my order.",
+    "expectedIntent": "cancellation",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-reply-refund-001",
+    "threadId": "thread-reply-refund-001",
+    "scenario": "reply_workflow",
+    "receivedAt": "2026-10-31T10:55:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer reply-refund",
+    "text": "I want a refund.",
+    "expectedIntent": "refund",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
+  },
+  {
+    "id": "msg-reply-uncertain-001",
+    "threadId": "thread-reply-uncertain-001",
+    "scenario": "reply_workflow",
+    "receivedAt": "2026-10-31T10:55:00+07:00",
+    "channel": "demo-inbox",
+    "customerLabel": "Buyer reply-uncertain",
+    "text": "Can you sort that thing out?",
+    "expectedIntent": "unknown",
+    "expectedAction": "DRAFT_FOR_SELLER",
+    "expectedUrgency": "LOW",
+    "expectedUrgencyReasons": [
+      "No explicit temporal deadline"
+    ],
+    "expectedEvidenceIds": [],
+    "modelStatus": "AVAILABLE",
+    "safeFallback": null
   }
 ]
