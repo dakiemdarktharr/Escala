@@ -59,7 +59,7 @@ If retrieval is empty, evidence conflicts, confidence is low, the model fails, o
 
 ## Deferred infrastructure
 
-No authentication, multi-tenancy, live marketplace OAuth, vector store, queue, background worker, or billing is in MVP scope. Vercel is the target deployment platform once the required user-managed deployment token is available.
+Authentication, multi-tenancy, live marketplace OAuth, vector store and billing remain deferred. The authorized autonomous inbox adds MongoDB jobs and a local/dedicated worker inside this application. Vercel deployment still requires separate validation, including a reliable worker runtime.
 
 ## Seller response integration (2026-09-28)
 
@@ -74,3 +74,15 @@ No live OpenAI credentials were present: actual local UI uses reviewed templates
 Existing queue, thread, recommendation and context components own the three messaging work areas. History scrolls above a separate reply dock; context uses Analysis/Evidence/Activity tabs and the existing native dialog drawer. The app shell contains scrolling so keyboard focus does not displace the header or composer. Theme initialization lives in the existing root layout; the top-bar preference control updates shared CSS variables without another provider or dependency.
 
 Inbox display previews/timestamps now come from the last sequenced persisted message. Priority/tie sorting and inference still use the original buyer thread fields. A Mongo aggregation in the existing inbox service performs this projection; no new endpoint, collection or duplicated summary type was introduced. The in-memory sample client mirrors latest-message presentation without adding persistence.
+
+## Autonomous inbox integration (2026-09-28)
+
+`inbox-service.ts` remains the authority for inbound analysis, generation, final policy, conversation state, settings/brief and reply persistence. `policy.mjs` adds bounded, fresh stock/tracking wording and generated-text/hostility/conflict gates. Shared contracts stay in `src/domain/contracts.ts`; model weights and priority rules are unchanged. `repository.ts` backfills absent revision/state metadata and jobs without rewriting historical messages or inventing migration activity.
+
+The existing MongoDB database adds `processing_jobs`, `reply_deliveries`, and a single-workspace `workspace_settings` record. These are durable state within the current persistence system, not another queue service/database. Atomic job leases allow concurrent workers; unique event IDs/revisions and transactional proposal consumption prevent duplicate messages. Buyer ingress supersedes prior jobs and pending candidates. Settings version/fence plus thread revision protect generation and delivery races.
+
+New responsibility owners: `autonomy.ts` claims jobs and calls the existing generator/send service; `transport.ts` exposes simulated delivery with deterministic receipts; `instrumentation.ts` starts the local worker on Node server startup; `scripts/process-inbox.mts` runs the same worker independently or once for scheduling. No independent policy/generator lives in the worker. UI GET polling reads persisted results. The new inbound/messages and autonomy/settings routes expose capabilities absent from previous routes; conversation PATCH and retry extend existing endpoints.
+
+Opening brief reads structured audits `(lastSeenAt, asOf]`, current attention backlog and explicit conversation transitions. The displayed snapshot is stable while the header settings and inbox update. Acknowledgment advances only through displayed `asOf`. No order-update connector exists, so no fabricated order changes appear. These settings/lastSeen records are single-workspace prototype state; authenticated per-seller state is a production requirement.
+
+Local browser verification uses the explicitly labeled `scripts/responses-fixture.mjs` protocol fixture, not live AI. A long-running Node server can run its interval worker; serverless processes require a dedicated worker or scheduler invoking the same durable jobs. Real connectors and receipt reconciliation are not implemented.

@@ -8,6 +8,8 @@ const HARD_RISK_PATTERNS = [
   ["exceptional discounts or compensation require seller review", /\b(discount|coupon|compensation|compensate|free replacement|store credit|waive the fee)\b|giảm giá|mã giảm|bồi thường|đền bù/i],
   ["requested external actions need seller approval", /\b(send|issue|apply|dispatch|ship it|change|delete|publish)\b.{0,35}\b(now|immediately|for me|my order|the refund|a discount|a replacement)\b|gửi ngay|thực hiện giúp|xóa đơn/i],
   ["replacement or reshipment requires seller approval", /\b(?:replace my|replace the|resend|reship|reshipment|send (?:me )?(?:a |another )?replacement|ship (?:a )?replacement)\b|gửi lại hàng|gửi hàng thay thế/i],
+  ["returns or exchanges need seller authorization", /\b(?:exchange (?:it|my|this|the)|return (?:it|my|this|the)|(?:want|need|can i) (?:a |an |to )?(?:return|exchange))\b|đổi hàng|trả hàng/i],
+  ["fraud, disputes and policy exceptions require seller review", /\b(?:fraud|chargeback|dispute|policy exception|make an exception|change (?:the |my )?payment|change (?:the |my )?address)\b/i],
 ];
 
 const REQUIRED_SAFE_EVIDENCE = [
@@ -67,23 +69,52 @@ export function replyTemplate(text, evidenceIds = []) {
 
 export function hasUnverifiedActionClaim(draft) {
   const claims = normalizeText(draft).replace(/\bno refund has been issued yet\b/g, "");
+  if (/\b(?:i[ '\u2019]?ll|we[ '\u2019]?ll) (?:refund|cancel|reship|replace)|\b(?:definitely|guaranteed to|will certainly) (?:arrive|be delivered)|\b(?:reserve|reserved|guarantee) (?:your|this|the) (?:stock|item|size)\b/i.test(claims)) return true;
   return /\b(?:refund (?:has been|was|is) (?:issued|processed|approved)|(?:i|we)(?: have)? (?:cancelled|canceled|refunded|shipped|dispatched)|order (?:has been|was|is) cancel(?:led|ed)|replacement is on the way|guarantee(?:d)? (?:delivery|arrival)|will (?:refund|cancel|reship|replace)|refund approved)\b|\b(?:da hoan tien|da huy don|da gui hang thay the|se hoan tien|se huy don|se gui hang thay the|cam ket giao)\b/i.test(claims);
 }
 
 /** This gate never takes sentiment, urgency, or priority as permission. */
-export function replyDeliveryDecision({ text, draft, confidence, threshold = .9, automaticGrounded = false }) {
+export function replyDeliveryDecision({ text, draft, confidence, threshold = .9, automaticGrounded = false, uncertain = false }) {
   // An explicit non-guarantee in reply wording is not a delivery promise.
   // Buyer requests are checked unchanged, including requests for guarantees.
-  const replyRiskText = (draft ?? "").replace(/\b(?:not a guarantee|cannot guarantee|can't guarantee|is not guaranteed)\b/gi, "");
+  const replyRiskText = (draft ?? "").replace(/\b(?:not a (?:delivery-time )?guarantee|cannot guarantee|can't guarantee|is not guaranteed)\b/gi, "");
   const risk = detectHardRisk(`${text}\n${replyRiskText}`);
   const reasons = [...risk.reasons];
+  if (draft && hasUnverifiedActionClaim(draft)) {
+    risk.hard = true;
+    reasons.push("Generated reply introduces an unverified commitment or completed action");
+  }
+  const hostile = /\b(?:fuck you|kill you|you idiot|you moron|you bitch|dit me|dm may|dmm|boc phot)\b/.test(normalizeText(text));
+  if (hostile) reasons.push("Hostile or escalated wording needs seller judgment before an automated response");
+  if (uncertain) reasons.push("Uncertain or conflicting analysis/context requires seller review");
   const validThreshold = Number.isFinite(threshold) && threshold >= .9 && threshold <= 1;
   const confident = validThreshold && Number.isFinite(confidence) && confidence >= threshold && confidence <= 1;
   if (!confident) reasons.push("Reply confidence is unavailable or below the automatic-send threshold");
   if (!draft?.trim()) return { deliveryState: "MANUAL_ONLY", risk: risk.hard ? "high" : "low", reasons };
   if (risk.hard) return { deliveryState: "APPROVAL_REQUIRED", risk: "high", reasons };
   if (!automaticGrounded) reasons.push("Draft is not a verified automatic reply; seller review required");
-  return { deliveryState: confident && automaticGrounded ? "AUTO_SEND" : "REVIEW_REQUIRED", risk: "low", reasons };
+  return { deliveryState: confident && automaticGrounded && !hostile && !uncertain ? "AUTO_SEND" : "REVIEW_REQUIRED", risk: "low", reasons };
+}
+
+/** Mechanically grounded wording from trusted, time-bounded repository facts. */
+export function groundedReply(text, context = {}, evidenceIds = [], now = new Date()) {
+  const valid = (fact) => fact && evidenceIds.includes(fact.evidenceId)
+    && Number.isFinite(Date.parse(fact.observedAt)) && Date.parse(fact.observedAt) <= now.getTime()
+    && Date.parse(fact.validUntil) > now.getTime();
+  const stock = context.stock;
+  if (valid(stock) && typeof stock.productName === "string" && /^[a-z0-9 -]{1,80}$/i.test(stock.productName)
+    && /^[a-z0-9 -]{1,12}$/i.test(stock.size) && typeof stock.available === "boolean"
+    && /\b(?:size|stock|available|have this)\b/i.test(text) && !/\b(?:delivery|shipping)\b/i.test(text)
+    && new RegExp(`\\b${stock.size}\\b`, "i").test(text)) {
+    return { draft: `Size ${stock.size} of ${stock.productName} is ${stock.available ? "currently listed as available" : "currently listed as unavailable"}. Availability can change before checkout.`, evidenceIds: [stock.evidenceId] };
+  }
+  const tracking = context.tracking;
+  if (valid(tracking) && /^[a-z0-9-]{1,40}$/i.test(tracking.orderId)
+    && ["Processing", "Shipped", "In transit", "Delivered", "Delayed"].includes(tracking.status)
+    && /\b(?:where|status|tracking|arriv|shipment|package|order)\b/i.test(text)) {
+    return { draft: `The verified tracking snapshot for order #${tracking.orderId} shows: ${tracking.status}. This status is not a delivery-time guarantee.`, evidenceIds: [tracking.evidenceId] };
+  }
+  return null;
 }
 
 // Detection normalization never replaces the persisted buyer message.
@@ -113,6 +144,7 @@ export function vietnameseSentiment(text) {
 }
 export function detectIntent(text) {
   const normalized = normalizeText(text);
+  if (/\b(?:do you have|have this|available)\b.*\bsize\b/.test(normalized) && !/\b(?:delivery|shipping)\b/.test(normalized)) return "stock_check";
   if (/\bordered (?:the )?(?:medium|small|large|size .+) (?:but |and )?(?:got|received)\b/.test(normalized)) return "wrong_item";
   if (/\bwhere (?:is|s) my (?:fucking |damn )?(?:package|parcel|shipment)\b/.test(normalized)) return "order_status";
   if (/\bcome in (?:black|white|blue|red)\b/.test(normalized)) return "product_information";

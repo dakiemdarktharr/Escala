@@ -3,39 +3,34 @@ import assert from "node:assert/strict";
 import { spawn, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { once } from "node:events";
-import { createServer } from "node:http";
+import { startResponsesStub } from "../scripts/responses-fixture.mjs";
+import { ANALYSIS_VERSION } from "../src/server/policy.mjs";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { MongoClient } from "mongodb";
-import { replyTemplate } from "../src/server/policy.mjs";
 
 const enabled = process.env.ESCALA_RUN_INTEGRATION === "1";
-test("Escala reply workflow persists history/audit and enforces server-side policy", { skip: !enabled, timeout: 240_000 }, async () => {
+test("Escala reply workflow and autonomous jobs persist history/audit and enforce server-side policy", { skip: !enabled, timeout: 360_000 }, async (t) => {
   const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: "8.2.6" } });
   const dbClient = new MongoClient(mongo.getUri());
   await dbClient.connect();
   const database = dbClient.db("escala_test");
   let server, output = "";
   const root = "http://127.0.0.1:3102";
+  let holdText, signalStarted, releaseCandidate;
   // Local Responses API protocol stub: tests the actual SDK adapter; not live AI.
-  const mock = createServer(async (req, res) => {
-    let raw = ""; for await (const chunk of req) raw += chunk;
-    const input = JSON.parse(JSON.parse(raw).input);
-    const template = replyTemplate(input.buyerMessage, input.evidence.map((item) => item.id));
-    const candidate = { intent: template.intent, draft: template.draft,
-      confidence: template.intent === "unknown" ? .4 : .96,
-      missingInformation: [], evidenceIdsUsed: input.evidence.map((item) => item.id) };
+  const mock = await startResponsesStub(0, async (candidate, input) => {
     if (input.buyerMessage === "I want a refund.") candidate.draft = "Your refund has been issued.";
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ id: "resp_test", object: "response", status: "completed", output: [
-      { id: "msg_test", type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: JSON.stringify(candidate), annotations: [] }] },
-    ] }));
+    if (input.buyerMessage === "When will this arrive? risky proposal test") candidate.draft = "I'll refund you immediately.";
+    if (input.buyerMessage === "Thank you! generation failure test") throw new Error("Test-only generator failure");
+    if (input.buyerMessage === holdText) {
+      signalStarted(); await new Promise(resolve => { releaseCandidate = resolve; });
+    }
   });
-  mock.listen(0, "127.0.0.1"); await once(mock, "listening");
   const baseURL = `http://127.0.0.1:${mock.address().port}/v1`;
-  async function start(useMock = false) {
+  async function start(useMock = false, failTransport = false) {
     server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", "3102"], {
       cwd: process.cwd(), windowsHide: true,
-      env: { ...process.env, MONGODB_URI: mongo.getUri(), MONGODB_DB: "escala_test", OPENAI_API_KEY: useMock ? "test-only-not-a-real-key" : "", OPENAI_BASE_URL: baseURL, ESCALA_ENABLE_EXTERNAL_SEND: "false" },
+      env: { ...process.env, MONGODB_URI: mongo.getUri(), MONGODB_DB: "escala_test", OPENAI_API_KEY: useMock ? "test-only-not-a-real-key" : "", OPENAI_BASE_URL: baseURL, ESCALA_ENABLE_EXTERNAL_SEND: "false", ESCALA_AUTONOMY_WORKER: "0", ESCALA_AUTONOMY_MODE: "ON", ESCALA_GENERATION_PROVIDER: "test_stub", ESCALA_SIMULATED_TRANSPORT_FAIL: failTransport ? "1" : "0" },
       stdio: ["ignore", "pipe", "pipe"],
     });
     server.stdout.on("data", (data) => { output += data; });
@@ -59,7 +54,9 @@ test("Escala reply workflow persists history/audit and enforces server-side poli
     assert.equal(response.status, 201, JSON.stringify(response.data));
     return response.data.recommendation;
   }
-  const reply = (id, body) => request(`/api/threads/${id}/replies`, { requestId: crypto.randomUUID(), mode: "seller", ...body });
+  const reply = async (id, body) => request(`/api/threads/${id}/replies`, {
+    requestId: crypto.randomUUID(), mode: "seller", contextRevision: (await request(`/api/threads/${id}`)).data.thread.contextRevision,
+    ...(body.sellerApproved ? { approvedText: body.text?.trim() } : {}), ...body });
   try {
     await start();
     assert.equal((await request("/api/health")).data.services.database, "connected");
@@ -173,6 +170,236 @@ test("Escala reply workflow persists history/audit and enforces server-side poli
     assert.notEqual(forbidden.draft, "Your refund has been issued.");
     assert.match(forbidden.modelNotice, /invalid\/unsafe/);
     assert.equal(await database.collection("threads").countDocuments(), 17);
+
+    // Background jobs, real MongoDB transactions and the actual Responses SDK.
+    // The stub is explicitly test-only; none of this represents live AI or delivery.
+    await database.collection("processing_jobs").updateMany({}, { $set: { status: "DONE" } });
+    const detail = async id => (await request(`/api/threads/${id}`)).data;
+    const mode = async value => {
+      const current = (await request("/api/autonomy")).data;
+      const changed = await request("/api/autonomy", { mode: value, expectedVersion: current.settings.version });
+      assert.equal(changed.status, 200, JSON.stringify(changed.data));
+    };
+    const inbound = async (id, text, eventId = crypto.randomUUID()) => {
+      const result = await request(`/api/threads/${id}/messages`, { eventId, text, buyerName: id });
+      assert.ok([200, 201].includes(result.status), JSON.stringify(result.data)); return result;
+    };
+    const worker = async (fail = false) => promisify(execFile)(process.execPath,
+      ["--import", "tsx", "scripts/process-inbox.mts", "--once", "--limit", "100"], {
+        windowsHide: true, env: { ...process.env, MONGODB_URI: mongo.getUri(), MONGODB_DB: "escala_test",
+          OPENAI_API_KEY: "test-only-not-a-real-key", OPENAI_BASE_URL: baseURL, ESCALA_GENERATION_PROVIDER: "test_stub",
+          ESCALA_AUTONOMY_WORKER: "0", ESCALA_SIMULATED_TRANSPORT_FAIL: fail ? "1" : "0" },
+      });
+    const fact = { evidenceId: "verified-test-stock", observedAt: new Date().toISOString(),
+      validUntil: new Date(Date.now() + 3_600_000).toISOString(), productName: "Linen Shirt", size: "M", available: true };
+    await t.test("verified size M is processed and sent without any UI generation request", async () => {
+      await inbound("auto-stock", "Do you have this in size M?");
+      assert.equal((await detail("auto-stock")).recommendation, null);
+      await database.collection("threads").updateOne({ id: "auto-stock" }, { $set: { verifiedContext: { stock: fact } } });
+      await worker();
+      const record = await detail("auto-stock");
+      assert.equal(record.thread.conversationState, "AUTO_HANDLED");
+      assert.equal(record.recommendation.deliveryState, "AUTO_SEND");
+      assert.equal(record.messages.at(-1).sentBy, "escala");
+      assert.match(record.messages.at(-1).text, /Size M of Linen Shirt.*available/);
+      assert.equal(record.deliveries[0].state, "SENT");
+      assert.match(record.deliveries[0].providerMessageId, /^sim-/);
+      assert.equal(record.audit.find(a => a.action === "reply_sent").reply.confidence, .96);
+      assert.equal(record.recommendation.generationProvider, "test_stub");
+    });
+    await t.test("verified order tracking reports factual status automatically", async () => {
+      await inbound("auto-tracking", "Where is my order?");
+      await database.collection("threads").updateOne({ id: "auto-tracking" }, { $set: { verifiedContext: { tracking: {
+        orderId: "4821", status: "In transit", evidenceId: "verified-tracking", observedAt: fact.observedAt, validUntil: fact.validUntil,
+      } } } });
+      await worker();
+      const record = await detail("auto-tracking");
+      assert.equal(record.thread.conversationState, "AUTO_HANDLED");
+      assert.match(record.messages.at(-1).text, /#4821 shows: In transit/);
+      assert.equal(record.order, null); // No inferred order mutation.
+    });
+    for (const [id, text] of [
+      ["held-guarantee", "This is a birthday gift and must arrive before 5 PM tomorrow. Can you guarantee delivery?"],
+      ["held-cancel", "Cancel my order."],
+      ["held-payment", "I was charged twice. Refund the second payment."],
+    ]) await t.test(`${id}: pre-generated reply held for exact seller approval`, async () => {
+      await inbound(id, text); await worker(); const record = await detail(id);
+      assert.equal(record.thread.conversationState, "APPROVAL_REQUIRED");
+      assert.equal(record.recommendation.deliveryState, "APPROVAL_REQUIRED");
+      assert.ok(record.recommendation.draft);
+      assert.equal(record.messages.filter(m => m.role === "seller").length, 0);
+      assert.ok(record.recommendation.reasons.length);
+    });
+    await t.test("low confidence ambiguous input has a prepared draft, never a sent message", async () => {
+      await inbound("held-ambiguous", "Something happened, can you help?"); await worker();
+      const record = await detail("held-ambiguous");
+      assert.equal(record.recommendation.confidence, .4);
+      assert.equal(record.recommendation.deliveryState, "REVIEW_REQUIRED");
+      assert.ok(record.recommendation.draft);
+      assert.equal(record.messages.length, 1);
+    });
+    await t.test("generated refund commitment is inspected and retained in audit, safe fallback held", async () => {
+      await inbound("held-proposal", "When will this arrive? risky proposal test"); await worker();
+      const record = await detail("held-proposal");
+      assert.equal(record.recommendation.deliveryState, "APPROVAL_REQUIRED");
+      assert.ok(record.audit.some(a => a.attemptedText === "I'll refund you immediately."));
+      assert.notEqual(record.recommendation.draft, "I'll refund you immediately.");
+      assert.equal(record.messages.length, 1);
+    });
+    await t.test("edited text and a new buyer revision cannot reuse an old approval", async () => {
+      const record = await detail("held-cancel"), rec = record.recommendation;
+      const wrong = await reply("held-cancel", { text: "I will refund you.", recommendationId: rec.id,
+        sellerApproved: true, approvedText: rec.draft });
+      assert.equal(wrong.data.error.code, "APPROVAL_REQUIRED");
+      await inbound("held-cancel", "Actually, do not cancel it. I need tracking instead.");
+      const stale = await reply("held-cancel", { text: rec.draft, recommendationId: rec.id, sellerApproved: true,
+        approvedText: rec.draft, contextRevision: record.thread.contextRevision });
+      assert.equal(stale.data.error.code, "STALE_CONTEXT");
+      assert.equal((await detail("held-cancel")).messages.filter(m => m.role === "seller").length, 0);
+    });
+    await t.test("simulated transport failure persists, enters digest and retry sends exactly once", async () => {
+      await inbound("auto-failed", "Do you have this in size M?");
+      await database.collection("threads").updateOne({ id: "auto-failed" }, { $set: { verifiedContext: { stock: fact } } });
+      await worker(true); const failed = await detail("auto-failed");
+      assert.equal(failed.thread.conversationState, "SEND_FAILED");
+      assert.equal(failed.deliveries[0].state, "FAILED");
+      assert.equal(failed.messages.length, 1);
+      assert.ok((await request("/api/autonomy")).data.brief.counts.failed >= 1);
+      const attemptId = failed.deliveries[0].id;
+      const first = await request("/api/threads/auto-failed/replies", { retryAttemptId: attemptId });
+      assert.equal(first.status, 200, JSON.stringify(first.data));
+      const second = await request("/api/threads/auto-failed/replies", { retryAttemptId: attemptId });
+      assert.equal(second.data.message.id, first.data.message.id);
+      assert.equal((await detail("auto-failed")).messages.filter(m => m.role === "seller").length, 1);
+    });
+    await t.test("duplicate and concurrent inbound events create one message and one processing job", async () => {
+      const eventId = crypto.randomUUID();
+      const results = await Promise.all([inbound("auto-duplicate", "Thank you!", eventId), inbound("auto-duplicate", "Thank you!", eventId)]);
+      assert.ok(results.some(r => r.data.duplicate));
+      await Promise.all([worker(), worker()]);
+      assert.equal(await database.collection("messages").countDocuments({ inboundEventId: eventId }), 1);
+      assert.equal(await database.collection("processing_jobs").countDocuments({ threadId: "auto-duplicate" }), 1);
+      assert.equal((await detail("auto-duplicate")).messages.filter(m => m.role === "seller").length, 1);
+    });
+    await t.test("DRAFT_ONLY prepares an eligible candidate and backend blocks automatic delivery", async () => {
+      await mode("DRAFT_ONLY"); await inbound("draft-only", "Thank you!"); await worker();
+      const record = await detail("draft-only");
+      assert.ok(record.recommendation.draft);
+      assert.equal(record.recommendation.deliveryState, "AUTO_SEND");
+      assert.equal(record.thread.conversationState, "WAITING_FOR_SELLER_REVIEW");
+      assert.equal(record.messages.length, 1);
+      const blocked = await reply("draft-only", { text: record.recommendation.draft, recommendationId: record.recommendation.id, mode: "automatic" });
+      assert.equal(blocked.data.error.code, "AUTONOMY_DISABLED");
+    });
+    await t.test("PAUSED keeps inbound persisted and does not generate or send", async () => {
+      await mode("PAUSED"); await inbound("paused", "Thank you!"); await worker();
+      const record = await detail("paused");
+      assert.equal(record.thread.conversationState, "AWAITING_PROCESSING");
+      assert.equal((await database.collection("threads").findOne({ id: "paused" })).analysisVersion, "pending");
+      assert.equal(record.recommendation, null); assert.equal(record.messages.length, 1);
+      await mode("ON"); await worker();
+      assert.equal((await detail("paused")).thread.conversationState, "AUTO_HANDLED");
+    });
+    await t.test("last-seen brief counts persisted facts, survives restart, and invents no order changes", async () => {
+      const snapshot = (await request("/api/autonomy")).data;
+      await request("/api/autonomy", { visitThrough: snapshot.brief.asOf });
+      await inbound("brief-new", "Thank you!"); await worker();
+      const current = (await request("/api/autonomy")).data;
+      assert.equal(current.brief.since, snapshot.brief.asOf);
+      assert.equal(current.brief.counts.incoming, 1);
+      assert.equal(current.brief.counts.automaticReplies, 1);
+      assert.deepEqual(current.brief.orderUpdates, []);
+      await stop(); await start(true);
+      const restored = (await request("/api/autonomy")).data;
+      assert.deepEqual(restored.brief.counts, current.brief.counts);
+      assert.equal(restored.brief.since, snapshot.brief.asOf);
+    });
+    await t.test("acknowledged brief with no new activity stays honest", async () => {
+      const snapshot = (await request("/api/autonomy")).data;
+      await request("/api/autonomy", { visitThrough: snapshot.brief.asOf });
+      const quiet = (await request("/api/autonomy")).data.brief;
+      assert.equal(quiet.counts.incoming, 0); assert.equal(quiet.counts.automaticReplies, 0);
+      assert.equal(quiet.counts.resolved, 0); assert.equal(quiet.counts.failed, 0);
+      assert.deepEqual(quiet.events, []); assert.deepEqual(quiet.orderUpdates, []);
+    });
+    await t.test("classifier failure and low classifier confidence hold otherwise eligible replies", async () => {
+      for (const [id, sentiment] of [["classifier-failed", { label: "unknown", confidence: null, language: "english", source: "unavailable" }],
+        ["classifier-low", { label: "neutral", confidence: .2, language: "english", source: "local_english_model" }]]) {
+        await inbound(id, "Thank you!");
+        await database.collection("threads").updateOne({ id }, { $set: { sentiment, analysisVersion: ANALYSIS_VERSION } });
+        await worker(); const record = await detail(id);
+        assert.equal(record.recommendation.deliveryState, "REVIEW_REQUIRED");
+        assert.equal(record.messages.length, 1);
+      }
+    });
+    await t.test("changed evidence invalidates pending automatic and seller approvals", async () => {
+      await mode("DRAFT_ONLY"); await inbound("stale-evidence", "Do you have this in size M?");
+      await database.collection("threads").updateOne({ id: "stale-evidence" }, { $set: { verifiedContext: { stock: fact } } });
+      await worker(); const record = await detail("stale-evidence");
+      await database.collection("threads").updateOne({ id: "stale-evidence" }, { $set: { "verifiedContext.stock.available": false } });
+      const blocked = await reply("stale-evidence", { text: record.recommendation.draft, recommendationId: record.recommendation.id });
+      assert.equal(blocked.data.error.code, "STALE_CONTEXT");
+      await mode("ON"); await worker();
+      assert.equal((await detail("stale-evidence")).messages.length, 1);
+    });
+    await t.test("explicit seller manual/escalated/resolved state survives mode changes and is never inferred from a reply", async () => {
+      await mode("DRAFT_ONLY"); await inbound("seller-manual", "Thank you!"); await worker();
+      const record = await detail("seller-manual");
+      const update = await fetch(root + "/api/threads/seller-manual", { method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: "ESCALATED", contextRevision: record.thread.contextRevision }) });
+      assert.equal(update.status, 200);
+      await mode("ON"); await worker();
+      assert.equal((await detail("seller-manual")).thread.conversationState, "ESCALATED");
+      const blocked = await reply("seller-manual", { text: record.recommendation.draft, recommendationId: record.recommendation.id, mode: "automatic" });
+      assert.equal(blocked.data.error.code, "AUTO_SEND_BLOCKED");
+      assert.equal((await detail("seller-manual")).messages.length, 1);
+      const resolved = await fetch(root + "/api/threads/seller-manual", { method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: "RESOLVED", contextRevision: record.thread.contextRevision }) });
+      assert.equal(resolved.status, 200);
+      assert.ok((await request("/api/autonomy")).data.brief.counts.resolved >= 1);
+    });
+    await t.test("generator failure prepares an honest fallback with no confidence and no send", async () => {
+      await inbound("generation-failed", "Thank you! generation failure test"); await worker();
+      const record = await detail("generation-failed");
+      assert.equal(record.recommendation.confidence, null);
+      assert.equal(record.recommendation.draftSource, "template");
+      assert.equal(record.recommendation.deliveryState, "REVIEW_REQUIRED");
+      assert.match(record.recommendation.modelNotice, /drafting failed/);
+      assert.equal(record.messages.length, 1);
+    });
+    await t.test("expired trusted facts cannot authorize automatic information claims", async () => {
+      await inbound("expired-stock", "Do you have this in size M?");
+      await database.collection("threads").updateOne({ id: "expired-stock" }, { $set: { verifiedContext: {
+        stock: { ...fact, validUntil: new Date(Date.now() - 1000).toISOString() } } } });
+      await worker(); const record = await detail("expired-stock");
+      assert.equal(record.recommendation.deliveryState, "REVIEW_REQUIRED");
+      assert.doesNotMatch(record.recommendation.draft, /currently listed as available/);
+      assert.equal(record.messages.length, 1);
+    });
+    for (const change of ["pause", "buyer"]) await t.test(`${change} during generation prevents stale candidate delivery`, async () => {
+      const id = `race-${change}`;
+      holdText = `Thank you! hold ${change} generation`;
+      const started = new Promise(resolve => { signalStarted = resolve; });
+      await inbound(id, holdText);
+      const processing = worker();
+      try {
+        await started;
+        if (change === "pause") await mode("PAUSED");
+        else await inbound(id, "Cancel my order.");
+      } finally { holdText = undefined; releaseCandidate?.(); }
+      await processing;
+      const record = await detail(id);
+      assert.equal(record.messages.filter(m => m.role === "seller").length, 0);
+      if (change === "pause") {
+        assert.equal(record.recommendation, null);
+        await mode("ON");
+        await database.collection("processing_jobs").updateMany({ threadId: id }, { $set: { status: "HELD", manualHold: true } });
+      } else {
+        assert.equal(record.thread.conversationState, "APPROVAL_REQUIRED");
+        assert.equal(record.recommendation.contextRevision, 1);
+        assert.equal(await database.collection("recommendations").countDocuments({ threadId: id, contextRevision: 0 }), 0);
+      }
+    });
   } finally {
     await stop(); await dbClient.close(); await mongo.stop();
     await new Promise((resolve) => mock.close(resolve));

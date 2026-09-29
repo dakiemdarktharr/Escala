@@ -139,3 +139,36 @@ Actual browser checks used local production Next.js and synthetic MongoDB: light
 The earlier ephemeral preview MongoDB had expired when work resumed; the preview was reseeded using existing repository code into a local replica set with persistent files under ignored `.local/demo-mongo`. Browser replies persisted across Next.js restarts/reloads. No remote database or external message delivery was used. The in-app screenshot capture produced scaling/clipping artifacts, including text cutouts and unused margins. Read-only DOM geometry confirmed anchored headers, controls within the viewport and no message horizontal overflow; screenshot evidence is imperfect and needs a clean capture on the target device for final visual signoff.
 
 English source and ONNX hashes remain unchanged (listed above); no retraining, policy-engine or priority-weight edits. Live OpenAI is unavailable locally; reviewed templates show null confidence. Numerical low/high confidence paths use the existing explicitly test-only Responses protocol stub. Physical mobile keyboards, full assistive-technology coverage, real customer evaluation and live connectors remain unverified. Very short windows can require scrolling within copilot details; the manual composer retains precedence.
+
+
+## 2026-09-28 — autonomous seller inbox in the existing app
+
+### Reused owners
+
+- src/server/inbox-service.ts: inbound raw-message persistence/revision invalidation, worker analysis, existing Responses generation, current-context final policy, exact-text approval, transport/outbox persistence, state controls, settings and structured brief.
+- src/server/policy.mjs and declaration: generated commitments, hostile/conflicting signals and fresh bounded repository stock/tracking wording; sentiment rules and priority weights retained.
+- src/server/mongodb.ts and repository.ts: same MongoDB system; jobs/deliveries/settings collection types/indexes and missing-metadata backfill. Existing messages/audits are retained. Background processing does not overwrite raw text. Explicit analysis refresh now avoids overwriting a changed buyer revision.
+- src/domain/contracts.ts: shared typed modes, conversation/delivery states, inbound events, receipts, context/approval and brief; no duplicate interfaces.
+- Existing thread/replies routes: PATCH seller state and retry variants; existing generation/decision routes remain.
+- Existing inbox API client, sample client, queue/workspace/thread/recommendation/context/presentation components and globals.css: attention buckets, prepared drafts, exact approval, consumed/stale draft review, GET-only polling, stable brief, mode control, collapse context and warm light/graphite dark tokens.
+- tests/inbox-integration.test.mjs and reply-policy.test.mjs: extend the same real Mongo/Next/SDK regression harness.
+
+### New files and necessity
+
+| File | Missing responsibility |
+| --- | --- |
+| src/server/autonomy.ts | Claim/recover durable Mongo jobs independently of UI reads and call existing service owners |
+| src/server/transport.ts | Existing direct persistence had no simulated transport abstraction/receipt |
+| src/instrumentation.ts | Start that worker on a Node Next server lifecycle |
+| scripts/process-inbox.mts | Run the same worker durably outside a request or once for a scheduler |
+| src/app/api/threads/[threadId]/messages/route.ts | Existing app had no inbound buyer-event ingestion endpoint |
+| src/app/api/autonomy/route.ts | Existing app had no persistent mode/last-seen/brief API |
+| scripts/responses-fixture.mjs | Extract and reuse the test's local SDK protocol fixture for regression and honest browser demonstrations; no production generator |
+
+No second frontend/API stack, database system, sentiment model, package dependency, copied standalone project, or wrapper around a duplicated generator was introduced. The previous click-to-suggest / client simulate-auto-send path was removed from normal inbox flow; optional regeneration remains an explicit seller action. Prior historical migration exclusions still apply.
+
+### Verification
+
+Original baseline: 60 passed. Final expanded suite on 2026-09-29: **84 passed, zero failures or skips**. It includes all 14 requested autonomy cases plus classifier failures, stale/expired evidence, seller dispositions, generation failure and pause/new-buyer races. Real MongoDB replica set, Next production HTTP, actual Responses SDK and reusable CLI worker are exercised. Lint, type checks, production build and demo validation passed. Browser checks verified persisted automatic tracking, prepared/held drafts, approval invalidation, paused inference, Draft only, brief facts and context collapse. Clean light/dark captures at 1280×720 confirmed no horizontal overflow; final preview mode is DRAFT_ONLY. The generator is a clearly labeled local protocol fixture, not live AI. No external delivery or order state mutation. Exact commands and remaining limits are recorded in README.
+
+Model SHA256 values are unchanged: source fe9f3a0ce17660e048ada03c4db1f26063e9ff6ff8f6657d16df5230a8993dba; ONNX a532971e33c196e4298c0a262553071f1e96ecd879f8c97c18e9b78fe4460aa1. No training or Vietnamese model replacement.

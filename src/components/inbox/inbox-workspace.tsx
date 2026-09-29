@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import type { InboxResponse } from "@/domain/contracts";
+import type { AutonomyBrief, AutonomyMode, AutonomySettings, InboxResponse } from "@/domain/contracts";
 import { Drawer } from "@/components/ui/drawer";
 import { Icon } from "@/components/ui/icon";
 import { apiClient, errorMessage } from "./api";
@@ -12,9 +12,9 @@ import {
   type QueueFilter,
 } from "./conversation-queue";
 import type { ContextTab } from "./context-panel";
-import { EmptyState, Notice } from "./presentation";
+import { dateLabel, EmptyState, needsSeller, Notice, readable } from "./presentation";
 import { createSampleClient } from "./sample-data";
-import { ThreadWorkspace } from "./thread-workspace";
+import { ThreadWorkspace, type ComposerDraft } from "./thread-workspace";
 
 type Mode = "api" | "sample";
 type ThemePreference = "system" | "light" | "dark";
@@ -70,12 +70,18 @@ export function InboxWorkspace({
   const [contextOpen, setContextOpen] = useState(false);
   const [contextTab, setContextTab] = useState<ContextTab>("analysis");
   const [drafts, setDrafts] = useState<
-    Record<string, { text: string; recommendationId?: string }>
+    Record<string, ComposerDraft>
   >({});
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<QueueFilter>("all");
+  const [filter, setFilter] = useState<QueueFilter>("needs-you");
+  const [settings, setSettings] = useState<AutonomySettings | null>(null);
+  const [brief, setBrief] = useState<AutonomyBrief | null>(null);
+  const [briefOpen, setBriefOpen] = useState(true);
+  const [autonomyError, setAutonomyError] = useState<string | null>(null);
+  const [updatingMode, setUpdatingMode] = useState(false);
+  const acknowledged = useRef(new Set<string>());
   const queueRequest = useRef<AbortController | null>(null);
 
   const loadQueue = useCallback(
@@ -113,7 +119,7 @@ export function InboxWorkspace({
           setSelectedId((current) =>
             current && response.threads.some((thread) => thread.id === current)
               ? current
-              : (response.threads[0]?.id ?? null),
+              : (response.threads.find(needsSeller)?.id ?? response.threads[0]?.id ?? null),
           );
           setRefreshError(null);
           setRefreshing(false);
@@ -134,8 +140,51 @@ export function InboxWorkspace({
 
   useEffect(() => {
     void loadQueue();
-    return () => queueRequest.current?.abort();
+    const timer = setInterval(() => { void loadQueue(true); }, 5000);
+    return () => { clearInterval(timer); queueRequest.current?.abort(); };
   }, [loadQueue]);
+  useEffect(() => {
+    const controller = new AbortController();
+    client.autonomy(controller.signal).then((response) => {
+      if (controller.signal.aborted) return;
+      setSettings((current) => current && current.version > response.settings.version ? current : response.settings);
+      setBrief(response.brief);
+      setAutonomyError(null);
+    }).catch((error: unknown) => {
+      if (!controller.signal.aborted) { setSettings(null); setBrief(null); setAutonomyError(errorMessage(error)); }
+    });
+    const timer = setInterval(() => {
+      void client.autonomy(controller.signal).then((response) => {
+        if (controller.signal.aborted) return;
+        // Refresh authoritative controls without replacing or acknowledging the opening brief.
+        setSettings((current) => current && current.version > response.settings.version ? current : response.settings);
+        setAutonomyError(null);
+      }).catch((error: unknown) => {
+        if (!controller.signal.aborted) { setSettings(null); setAutonomyError(errorMessage(error)); }
+      });
+    }, 5000);
+    return () => { clearInterval(timer); controller.abort(); };
+  }, [client]);
+  useEffect(() => {
+    if (!brief || mode === "sample" || acknowledged.current.has(brief.asOf)) return;
+    // Acknowledge only the snapshot that has reached the rendered opening brief.
+    acknowledged.current.add(brief.asOf);
+    void client.updateAutonomy({ visitThrough: brief.asOf }).catch((error: unknown) => setAutonomyError(`Visit could not be saved. ${errorMessage(error)}`));
+  }, [brief, client, mode]);
+
+  async function changeAutonomy(nextMode: AutonomyMode) {
+    if (!settings || updatingMode) return;
+    setUpdatingMode(true);
+    setAutonomyError(null);
+    try {
+      const response = await client.updateAutonomy({ mode: nextMode, expectedVersion: settings.version });
+      setSettings(response.settings);
+      void loadQueue(true);
+    } catch (error) {
+      setAutonomyError(errorMessage(error));
+      try { const response = await client.autonomy(); setSettings(response.settings); } catch { setSettings(null); }
+    } finally { setUpdatingMode(false); }
+  }
   useEffect(() => {
     function restoreLocation() {
       const params = new URLSearchParams(window.location.search);
@@ -143,6 +192,8 @@ export function InboxWorkspace({
       if (newMode !== mode) {
         setQueue({ status: "loading" });
         setCounts(null);
+        setSettings(null);
+        setBrief(null);
         setMode(newMode);
       }
       setSelectedId(params.get("thread"));
@@ -170,7 +221,10 @@ export function InboxWorkspace({
     setQueueOpen(false);
     setContextOpen(false);
     setQuery("");
-    setFilter("all");
+    setFilter("needs-you");
+    setSettings(null);
+    setBrief(null);
+    setAutonomyError(null);
     updateLocation(nextMode, null);
   }
   function selectThread(id: string) {
@@ -218,6 +272,13 @@ export function InboxWorkspace({
         <h1 className="workspace-label" id="inbox-heading" tabIndex={-1}>Inbox</h1>
         {counts && <span className="topbar-count">{counts.needsReview} need review</span>}
         <div className="topbar-actions">
+          <label className={`autonomy-control autonomy-${settings?.mode ?? "unknown"}`} title={autonomyError ?? "Backend enforced autonomy · simulated delivery"}>
+            <Icon name={settings?.mode === "ON" ? "spark" : "shield"} size={15} />
+            <select aria-label="Escala autonomy" disabled={!settings || updatingMode || mode === "sample"} value={settings?.mode ?? "unknown"} onChange={(event) => { void changeAutonomy(event.target.value as AutonomyMode); }}>
+              {!settings && <option value="unknown">{mode === "sample" ? "Static preview" : "Autonomy unavailable"}</option>}
+              <option value="ON">Escala active</option><option value="DRAFT_ONLY">Draft only</option><option value="PAUSED">Escala paused</option>
+            </select>
+          </label>
           <label className="theme-picker">
             <Icon name={theme === "dark" ? "moon" : theme === "light" ? "sun" : "monitor"} size={16} />
             <span className="sr-only">Color theme</span>
@@ -267,6 +328,20 @@ export function InboxWorkspace({
               </button>
             )}
           </div>
+          {mode === "api" && autonomyError && <div className="autonomy-error" role="status">{autonomyError}</div>}
+          {brief && <section className={`seller-brief${briefOpen ? " is-open" : ""}`} aria-label="Opening activity brief">
+            <div className="brief-heading">
+              <Icon name="spark" size={18} />
+              <div><h2>{brief.firstVisit ? "Your workspace at a glance" : "While you were away"}</h2><p>{brief.since ? `Since ${dateLabel(brief.since, true)}` : "Recorded workspace activity"} · through {dateLabel(brief.asOf)}</p></div>
+              <div className="brief-totals"><span><strong>{brief.counts.automaticReplies}</strong> automatic replies</span><span><strong>{brief.counts.needsReview + brief.counts.approvalRequired}</strong> currently need you</span></div>
+              <button className="text-button" onClick={() => setBriefOpen(!briefOpen)} aria-expanded={briefOpen}>{briefOpen ? "Hide brief" : "View brief"}</button>
+            </div>
+            {briefOpen && <div className="brief-content">
+              <p className="brief-summary">{brief.counts.incoming === 0 && brief.events.length === 0 && brief.orderUpdates.length === 0 ? "No new activity in this period." : `In this period: ${brief.counts.incoming} incoming messages · ${brief.counts.resolved} resolved${brief.counts.failed ? ` · ${brief.counts.failed} failed sends` : ""}${brief.counts.escalated ? ` · ${brief.counts.escalated} escalated` : ""}`}{` · ${brief.counts.approvalRequired} currently awaiting approval`}</p>
+              {(brief.events.length > 0 || brief.orderUpdates.length > 0) && <details className="brief-events"><summary>Activity & order updates</summary><ul>{[...brief.orderUpdates, ...brief.events].slice(0, 12).map((event) => <li key={event.id}><button className="text-button" onClick={() => selectThread(event.threadId)}><strong>{event.buyerName}</strong> · {readable(event.action)}</button>{event.reasons[0] && <span>{readable(event.reasons[0])}</span>}</li>)}</ul></details>}
+              {brief.counts.needsReview + brief.counts.approvalRequired > 0 && <button className="button secondary" onClick={() => { setFilter("needs-you"); const first = queue.status === "ready" ? queue.threads.find(needsSeller) : null; if (first) selectThread(first.id); setBriefOpen(false); }}>Review conversations <Icon name="chevron" size={14} /></button>}
+            </div>}
+          </section>}
           {refreshError && (
             <div className="refresh-error">
               <Notice variant="error">

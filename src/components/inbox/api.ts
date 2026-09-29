@@ -1,5 +1,8 @@
 import type {
   ApiErrorResponse,
+  AutonomyResponse,
+  AutonomyUpdateInput,
+  ConversationUpdateInput,
   CreateRecommendationResponse,
   InboxResponse,
   SellerDecisionInput,
@@ -10,6 +13,10 @@ import type {
 } from "@/domain/contracts";
 
 export interface InboxClient {
+  autonomy(signal?: AbortSignal): Promise<AutonomyResponse>;
+  updateAutonomy(input: AutonomyUpdateInput): Promise<AutonomyResponse>;
+  updateConversation(id: string, input: ConversationUpdateInput): Promise<ThreadDetailResponse>;
+  retryReply(id: string, attemptId: string): Promise<SendReplyResponse>;
   inbox(signal?: AbortSignal): Promise<InboxResponse>;
   thread(id: string, signal?: AbortSignal): Promise<ThreadDetailResponse>;
   recommend(id: string): Promise<CreateRecommendationResponse>;
@@ -83,6 +90,10 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const apiClient: InboxClient = {
+  autonomy: (signal) => request<AutonomyResponse>("/api/autonomy", { signal }),
+  updateAutonomy: (input) => request<AutonomyResponse>("/api/autonomy", { method: "POST", body: JSON.stringify(input) }),
+  updateConversation: (id, input) => request<ThreadDetailResponse>(`/api/threads/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
+  retryReply: (id, retryAttemptId) => request<SendReplyResponse>(`/api/threads/${encodeURIComponent(id)}/replies`, { method: "POST", body: JSON.stringify({ retryAttemptId }) }),
   inbox: (signal) => request<InboxResponse>("/api/inbox", { signal }),
   thread: (id, signal) =>
     request<ThreadDetailResponse>(`/api/threads/${encodeURIComponent(id)}`, {

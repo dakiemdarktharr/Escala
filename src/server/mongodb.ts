@@ -5,6 +5,7 @@ import type {
   RecommendationRecord,
   InboxThreadSummary,
   MessageRecord,
+  VerifiedReplyContext, OrderContext, AutonomySettings, ReplyAttempt,
 } from "@/domain/contracts";
 
 /** A synthetic inbox thread persisted for the demo seed. */
@@ -14,6 +15,9 @@ export interface SyntheticThreadRecord extends InboxThreadSummary {
   analysisVersion?: string;
   analyzedAt?: string;
   messageSequence?: number;
+  verifiedContext?: VerifiedReplyContext;
+  orderContext?: OrderContext;
+  processingJobId?: string;
 }
 
 /** A synthetic knowledge-base entry persisted for the demo seed. */
@@ -28,6 +32,31 @@ export interface KnowledgeBaseRecord {
   updatedAt: string;
   tags: string[];
   content: string;
+}
+
+export interface ProcessingJob {
+  id: string; threadId: string; buyerMessageId: string; contextRevision: number;
+  status: "QUEUED" | "PROCESSING" | "DONE" | "HELD" | "FAILED" | "SUPERSEDED";
+  leaseOwner?: string; leaseUntil?: string; recommendationId?: string;
+  attempts: number; createdAt: string; updatedAt: string; error?: string;
+  manualHold?: boolean;
+}
+export interface WorkspaceSettings extends AutonomySettings {
+  id: "workspace"; lastSeenAt?: string; operationFence?: number;
+}
+export interface StoredReplyAttempt extends ReplyAttempt {
+  sellerApproved: boolean; approvedText?: string; correctedMessageId?: string;
+  leaseOwner?: string; leaseUntil?: string;
+}
+
+export async function getJobsCollection(): Promise<Collection<ProcessingJob>> {
+  return (await getDb()).collection<ProcessingJob>("processing_jobs");
+}
+export async function getSettingsCollection(): Promise<Collection<WorkspaceSettings>> {
+  return (await getDb()).collection<WorkspaceSettings>("workspace_settings");
+}
+export async function getDeliveriesCollection(): Promise<Collection<StoredReplyAttempt>> {
+  return (await getDb()).collection<StoredReplyAttempt>("reply_deliveries");
 }
 
 const DB_NAME = process.env.MONGODB_DB || "escala";
@@ -48,6 +77,7 @@ export function getClient(): Promise<MongoClient> {
 
   if (!clientPromise) {
     clientPromise = new MongoClient(uri, {
+      ignoreUndefined: true,
       serverSelectionTimeoutMS: SERVER_SELECTION_TIMEOUT_MS,
       connectTimeoutMS: SERVER_SELECTION_TIMEOUT_MS,
     })

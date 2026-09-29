@@ -8,7 +8,7 @@ The MVP includes a responsive seller inbox, synthetic support scenarios and know
 
 Development now uses this cloned Escala repository. The authorized Shop Signal migration integrates its local English checkpoint and Vietnamese triage into Escala's existing server, contracts, MongoDB thread records, and inbox components. There is one Next.js app and one database system (MongoDB). No old SQLite database or FastAPI service is used.
 
-Verified on 2026-09-28: 60 tests pass including a real local MongoDB replica-set HTTP test, lint/typecheck/demo validation/build pass, and the production app runs locally. The API test verifies persisted seller replies, recommendations and audit records across an app restart and runs the cached-analysis refresh command. Atlas connectivity, live OpenAI generation, and Vercel deployment were not verified in this clone; no credentials were copied from the old project.
+Autonomous inbox implementation verified on 2026-09-29 against the existing 60-test baseline; the expanded suite passed all 84 tests. See the current verification section below for the expanded checks. The API test verifies persisted seller replies, recommendations and audit records across an app restart and runs the cached-analysis refresh command. Atlas connectivity, live OpenAI generation, and Vercel deployment were not verified in this clone; no credentials were copied from the old project.
 
 ## Run locally
 
@@ -43,19 +43,19 @@ Without that flag, the HTTP test is explicitly skipped. The real-model test is a
 
 The existing inbox now uses a conversation list, active chat and context sidebar. Queue rows show the latest persisted message/time, unread state and at most two status indicators. The compact header keeps priority, sentiment and intent visible; View analysis opens full buyer-message analysis, evidence, policy and audit details. Queue ordering and original buyer analysis inputs remain unchanged.
 
-Message history scrolls separately from the bottom reply dock. Buyer bubbles are neutral and left-aligned; sent seller bubbles use a soft brand tint on the right. The copilot suggestion sits above the always-visible multiline composer. Its draft is distinct from sent messages, with review/approval controls retained. Edit preserves suggestion provenance, manual replies remain available, and Ctrl/Cmd+Enter sends only when the same approval checks permit the Send button. Enter makes a new line. Longer suggestions/details use progressive disclosure rather than replacing the chat.
+Message history scrolls separately from the bottom reply dock. Buyer bubbles are neutral and left-aligned; sent seller bubbles use a soft brand tint on the right. A prepared candidate sits above the multiline composer for conversations needing review. Automatically handled conversations show the sent reply and waiting-for-buyer status, with a follow-up composer available. Its draft is distinct from sent messages, with review/approval controls retained. Edit preserves suggestion provenance, manual replies remain available, and Ctrl/Cmd+Enter sends only when the same approval checks permit the Send button. Enter makes a new line. Longer suggestions/details use progressive disclosure rather than replacing the chat.
 
 The top-bar Color theme control offers System, Light and Dark. Preference persists in localStorage (`escala-theme`); System follows OS changes. An inline script in the existing root layout applies the resolved theme before body paint. Storage failures leave a working session theme. The existing CSS variables define both palettes; no theme dependency/provider or second design system was added.
 
 | Token role | Light | Dark |
 | --- | --- | --- |
-| Background | #F7F7F5 | #0F1115 |
-| Primary surface | #FFFFFF | #161A20 |
-| Secondary surface | #F1F2F4 | #1C222B |
-| Raised surface | Secondary surface | #222936 |
-| Border | #E5E7EB | #2C3442 |
-| Primary text | #111827 | #F3F4F6 |
-| Secondary text | #6B7280 | #9CA3AF |
+| Background | #F4F3EF | #1A1B1D |
+| Primary surface | #FDFCF9 | #222426 |
+| Secondary surface | #F0EFEB | #2A2D2F |
+| Raised surface | #EAE9E4 | #333739 |
+| Border | #E6E4DE | #363A3B |
+| Primary text | #282B2C | #EDEEEB |
+| Secondary text | #72746F | #A0A5A1 |
 | Brand | #F05A28 | #FF6B3D |
 | Brand hover | #D94E21 | #FF7C54 |
 | Soft brand tint | #FFF1EB | Low-opacity brand mix |
@@ -64,41 +64,81 @@ The top-bar Color theme control offers System, Light and Dark. Preference persis
 | Risk/negative | #DC2626 | #F87171 |
 | Success/positive | #16A34A | #4ADE80 |
 
-Semantic colors appear in small labeled indicators, icons and subtle tints. Large surfaces stay neutral. Contrast variants handle small text; primary orange buttons use readable foregrounds. Existing queue/context drawers support narrower screens without duplicating the inbox. Models, confidence thresholds, deterministic risk rules and priority weights were not redesigned.
+Semantic colors appear in small labeled indicators, icons and subtle tints. Large surfaces stay neutral. Contrast variants handle small text; primary orange buttons use readable foregrounds. Existing queue/context drawers support narrower screens without duplicating the inbox. The English checkpoint, Vietnamese rules and priority weights are unchanged. Reply policy now additionally holds generated commitments, hostility and uncertain/conflicting analysis.
 
 Browser verification for this redesign covered light/dark preference and reload persistence, System resolution against the current OS preference, conversation switching, urgent and negative cases, order/evidence/context tabs, edited and manual multiline sends, sensitive-action approval, original/final audit text, long-message wrapping and independently scrolling copilot details. CSS viewports 1440×900, 900×650, and 390×600 were exercised. Local production delivery remained simulated. Screenshots are saved in ignored `.local/verification/messaging-{light,dark,mobile}.png`.
 
-Remaining limits: local suggestions are reviewed templates with unavailable confidence because no OpenAI key was configured. Live AI and actual marketplace sends were not tested. Physical-device keyboard behavior, comprehensive assistive-technology testing and confidence calibration still need evaluation. Very short windows prioritize the composer and can require scrolling within the copilot. Theme bootstrap reduces wrong-theme flash; a content-security policy that blocks inline scripts would need a nonce or hash. The in-app browser's screenshot capture showed scaling/clipping artifacts; DOM geometry and interactive checks verified layout/controls, but those images are imperfect visual evidence.
+Earlier messaging-only verification used reviewed templates with unavailable confidence because no OpenAI key was configured. The current autonomy preview additionally uses clearly labeled local SDK fixture candidates. Live AI and actual marketplace sends were not tested. Physical-device keyboard behavior, comprehensive assistive-technology testing and confidence calibration still need evaluation. Very short windows prioritize the composer and can require scrolling within the copilot. Theme bootstrap reduces wrong-theme flash; a content-security policy that blocks inline scripts would need a nonce or hash. The in-app browser's screenshot capture showed scaling/clipping artifacts; DOM geometry and interactive checks verified layout/controls, but those images are imperfect visual evidence.
 
-## Seller reply workflow
+## Autonomous seller inbox
 
-Every conversation has a manual reply composer. Suggest a reply shows an operational next step (for example, Review refund request), a buyer-facing draft, independent risk/confidence, evidence, source and delivery state. Send suggestion saves a safe reviewed response; Approve & send records explicit authorization for a sensitive reply. Edit loads the original suggestion into the composer, Discard draft removes the association, and Decline leaves manual replies available. Replies are simulated and stored in the existing MongoDB database, then displayed in history across refresh/restart. No order action is performed.
+Buyer events enter the existing thread service, persist original text and queue a durable MongoDB job. The background worker then runs local sentiment/intent/urgency/priority analysis and drafting when the backend mode permits it. The server worker prepares a candidate through the existing OpenAI Responses adapter. Deterministic policy inspects buyer context **and generated text**. UI reads never trigger generation or automatic delivery.
 
-`AUTO_SEND` means eligible, not already sent. The demo's Simulate automatic send control exercises the same authoritative reply route in automatic mode. It requires a successful live candidate, known intent, exact reviewed wording, complete evidence and confidence >= `ESCALA_CONFIDENCE_THRESHOLD` (default 0.90). Free-form/high-confidence alone does not pass grounding. `APPROVAL_REQUIRED` always blocks automatic mode; `REVIEW_REQUIRED` keeps low/unavailable-confidence suggestions visible. `MANUAL_ONLY` represents no usable suggestion. See [POLICY.md](docs/POLICY.md).
+| Policy decision | Behavior |
+| --- | --- |
+| AUTO_SEND | Eligible only: known intent, valid candidate confidence ≥0.90, exact reviewed wording, matching current evidence and no consequential commitment. Sends through simulated transport only while backend mode is ON. |
+| APPROVAL_REQUIRED | Money/order/security/dispute/returns/guarantees and generated commitments stay held. Approval binds exact trimmed final text, conversation revision and pending proposal. |
+| REVIEW_REQUIRED | Uncertain intent/classifier, low confidence, missing/stale facts, hostile wording, conflicting model intent or unreviewed wording. Draft is prepared for seller review. |
+| MANUAL_ONLY | No usable proposal or explicit seller manual disposition. Manual replies still pass deterministic risk checks. |
 
-**Why drafting was unavailable:** the old service short-circuited risky messages before calling OpenAI and the local clone has no `OPENAI_API_KEY`. The shortcut is removed. Without that key, the UI names the missing configuration and shows clearly labeled reviewed template wording with null confidence. This is not model output. To enable live drafting, set `OPENAI_API_KEY`, `OPENAI_MODEL` and `OPENAI_REASONING_EFFORT` in ignored `.env.local`, and restart Next.js. MongoDB must be a replica set (Atlas or local replica set) for reply/audit transactions. No credentials were recovered from another project.
+Stock/tracking answers require trusted repository snapshots with evidence ID, observation time, expiry and bounded values. Requests cannot inject verified facts. Stock replies report availability without reserving stock; tracking replies report status without a delivery guarantee. Factual problem reports can remain neutral; urgency never grants permission. Classifier unavailable/unknown or English score below 0.60 blocks automation. That score is an additional conservative gate, not calibrated real-customer accuracy.
 
-Production run after setting `.env.local`:
+**Backend controls:** ON processes and may send eligible replies; DRAFT_ONLY prepares without sending; PAUSED leaves incoming jobs queued without automatic processing/sending. New workspaces default to DRAFT_ONLY. Environment mode only initializes a new workspace; the persisted setting and version govern existing workspaces. The header refreshes settings independently of the stable opening brief. Explicit seller replies remain possible when paused.
+
+**Delivery and safety:** one existing replies endpoint serves manual, suggested, edited, automatic and retry operations. MongoDB persists QUEUED → SENDING → SENT/FAILED, provider receipt and request identity. A failed send records no seller message; retry reuses the attempt ID. Transactions serialize context, recommendation consumption and the mode fence. Duplicate/concurrent inbound events and worker claims are idempotent. A new buyer message supersedes old jobs/drafts. Edited approvals, changed evidence, consumed proposals and in-flight mode changes fail closed. Seller resolution/escalation is explicit and never changes order/payment state. A later human correction can reference the automatic message via correctedMessageId in the same reply contract.
+
+**Opening experience:** Needs you / Auto handled / All use persisted conversation states. Review drafts preload once, preserving typed edits through polling and thread switches. A new buyer revision or an automatically consumed suggestion requires reviewing current context before the retained text can be sent. Context is collapsible; light/dark themes use the existing CSS tokens. Automatic replies have timeline attribution and honest simulated-delivery labeling.
+
+**Brief:** GET /api/autonomy aggregates structured audit events between persisted lastSeenAt and captured asOf. First visit uses the server-day boundary, returned as an exact timestamp. Incoming/automatic/resolved/failed/escalated counts are activity in that interval; review/approval counts are **current backlog**. Acknowledging only the displayed asOf leaves later events for the next visit. GET is read-only. No LLM invents digest facts. orderUpdates is empty because no authoritative order-update connector exists. A quiet period says no new activity.
+
+### Exact commands
+
+Configure ignored .env.local from .env.example (MongoDB replica set required; OpenAI optional). No key means clearly labeled reviewed templates with null confidence; they never auto-send.
 
 ```powershell
+npm install
 npm run build
 npm run start -- -H 127.0.0.1 -p 3100
 ```
 
-Verified locally on 2026-09-28: all 60 tests passed with the integration flag, lint/typecheck/build and 17-message/7-document validation passed. The real HTTP/Mongo test covers fallback drafts, approval bypass rejection, editing/manual sends, idempotent retries, decline/stale protection, preserved priority, audit and app restart. A local protocol stub tests actual SDK parsing, high/low confidence, safe automatic simulation and rejection of a completed-refund claim; this is not live OpenAI validation. In the actual browser, all cases below were opened and exercised; edited/manual/approved replies survived reload and the edit audit showed original and final wording.
+A long-running local Next server starts the worker every three seconds through src/instrumentation.ts. For a dedicated worker using the **same** jobs and service, set ESCALA_AUTONOMY_WORKER=0 on Next and run:
 
-| Buyer case | Sentiment | Intent | Risk / local delivery state | Browser action |
-| --- | --- | --- | --- | --- |
-| Hi, does this come in black? | Neutral | Product information | Low / review required | Edit and send a question; no invented black stock |
-| I ordered medium but got large. | Neutral | Wrong item | Low / review required | Edit/send, reload, inspect original/final audit |
-| where is my fucking package | Negative | Order status | Low / review required | Send suggested order-number question |
-| Cancel my order. | Neutral | Cancellation | High / approval required | Approve/send acknowledgement; no cancellation claim |
-| I want a refund. | Neutral | Refund | High / approval required | Edit; send disabled until explicit approval; save |
-| dit me may tra tien cho tao | Negative, Vietnamese rules | Refund | High / approval required, priority 85 | Approve/send Vietnamese draft and reload |
-| Can you sort that thing out? | Neutral | Unknown | Low / review required | Retain draft, decline it and send manual clarification |
-| cảm ơn shop nha hàng đẹp lắm | Positive, Vietnamese rules | Positive feedback | Manual reply without recommendation | Send Vietnamese thank-you and reload |
+```powershell
+npm run worker
+# One bounded pass, useful for a scheduler or troubleshooting:
+npm run worker:once
+# A larger bounded pass:
+node --env-file=.env.local --import tsx scripts/process-inbox.mts --once --limit 100
+```
 
-Local template confidence is null, not a fabricated low model score. The numerical 0.40 low-confidence and 0.96 high-confidence paths were exercised with the protocol stub in integration tests. Live generation quality and confidence calibration remain unverified without credentials and representative human-reviewed replies. The phrase-based risk/intent rules and templates are intentionally limited; auto-send uses conservative reviewed wording. The English checkpoint and ONNX hashes are unchanged; no sentiment training or priority-weight changes occurred in this task.
+An example synthetic inbound event (no trusted stock/payment fields accepted):
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3100/api/threads/example-buyer/messages -ContentType application/json -Body '{"eventId":"example-event-0001","text":"Do you have this in size M?","buyerName":"Example buyer"}'
+```
+
+Use the header to change mode, or POST /api/autonomy with mode and the current expectedVersion from GET /api/autonomy. Retry POST /api/threads/:id/replies with retryAttemptId from the thread's delivery records. PATCH the existing thread route with state and contextRevision for explicit resolution/escalation/manual handling.
+
+### Test-only local generation
+
+Integration tests and browser auto-send checks use scripts/responses-fixture.mjs to exercise the actual Responses SDK with deterministic local candidates. It performs **no AI inference or external calls**. These numerical fixture confidences are not real model evaluation. For an explicitly labeled local preview, start:
+
+```powershell
+node scripts/responses-fixture.mjs 3130
+```
+
+In another terminal, set OPENAI_BASE_URL=http://127.0.0.1:3130/v1, OPENAI_API_KEY=test-only-not-a-real-key and ESCALA_GENERATION_PROVIDER=test_stub before starting Next. Test candidates are labeled “Local test candidate · no live AI.” Remove these overrides for actual OpenAI drafting. Never use this stub as a production generator. ESCALA_SIMULATED_TRANSPORT_FAIL=1 is a local fault-injection switch for recorded FAILED/retry behavior, not a real transport.
+
+### Verification and remaining limits
+
+Baseline: **60 passed** before changes. Expanded tests cover all 14 requested cases plus classifier failure/low score, expired/changed evidence, explicit seller state, generator failure and pause/new-buyer races during generation. The HTTP suite runs a real isolated MongoDB replica set, production Next server, actual SDK adapter and CLI worker. It checks persistence across restart and counts actual messages/audits rather than frontend labels. Use the integration flag from Verification above; no Atlas or live OpenAI calls occur.
+
+Final gates: **84 tests passed, zero failures or skips** on 2026-09-29 with `ESCALA_RUN_INTEGRATION=1`; lint, TypeScript checks, production build and validation of 17 demo messages / 7 knowledge documents passed.
+
+Browser checks on the production app with persisted local MongoDB and the labeled test stub verified prepared drafts, edit/approval invalidation, stock/tracking automatic simulated replies, held sensitive requests, persisted activity across restart, and the opening brief. PAUSED left a new Vietnamese buyer message unclassified with no draft; DRAFT_ONLY then prepared its reply without sending. Light/dark, context collapse/reopen and the three-column desktop layout were checked again on 2026-09-29 at 1280×720; document width equaled viewport width. Clean final captures are saved in ignored `.local/verification/autonomy-{light,dark}.png`; earlier capture artifacts described above do not affect these final images. The preview remains in DRAFT_ONLY.
+
+No English retraining, Vietnamese model replacement, real marketplace send or order mutation occurs. Authentication/multi-tenancy, real provider receipts/reconciliation, representative customer evaluation, calibrated reply confidence and live OpenAI/Atlas/Vercel deployment remain unverified. A serverless process may stop its interval worker: deploy the durable CLI worker/scheduled bounded pass before relying on unattended serverless processing. Real transport delivery cannot be made exactly-once by a Mongo transaction alone; it requires provider idempotency and reconciliation.
+
 ## Integrated sentiment and triage
 
 `src/server/policy.mjs` owns inspectable routing, Vietnamese tone cues, intent detection, temporal urgency, and queue priority alongside Escala's existing recommendation policy. Accents are one language signal; Vietnamese phrases, unaccented vocabulary, teencode, and mixed text also route to Vietnamese rules. The original message is retained. Questions, requests, and factual issue reports default to neutral; explicit dissatisfaction or abuse is negative. Rule labels have no calibrated confidence. Short ambiguous messages, negation, sarcasm, and unfamiliar slang remain limitations; these rules are not general Vietnamese sentiment validation.

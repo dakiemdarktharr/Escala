@@ -3,7 +3,7 @@
 import { useId } from "react";
 import type { ThreadDetailResponse } from "@/domain/contracts";
 import { Icon } from "@/components/ui/icon";
-import { actionLabels, dateLabel, EmptyState, LevelBadge, readable, TriageSignals } from "./presentation";
+import { actionLabels, conversationLabels, dateLabel, EmptyState, LevelBadge, readable, TriageSignals } from "./presentation";
 
 export type ContextTab = "analysis" | "evidence" | "activity";
 
@@ -12,11 +12,13 @@ export function ContextPanel({
   tab,
   onTabChange,
   sample,
+  onClose,
 }: {
   detail: ThreadDetailResponse;
   tab: ContextTab;
   onTabChange: (tab: ContextTab) => void;
   sample: boolean;
+  onClose?: () => void;
 }) {
   const id = useId();
   const evidence = detail.recommendation?.evidence ?? detail.evidence;
@@ -28,6 +30,7 @@ export function ContextPanel({
       <div className="context-title">
         <Icon name="book" size={18} />
         <h2>Conversation context</h2>
+        {onClose && <button className="icon-button context-close" onClick={onClose} aria-label="Collapse context"><Icon name="close" size={15} /></button>}
       </div>
       <div
         className="context-tabs"
@@ -36,7 +39,7 @@ export function ContextPanel({
       >
         {(
           [
-            ["analysis", "Analysis"],
+            ["analysis", "Overview"],
             ["evidence", "Evidence"],
             ["activity", "Activity"],
           ] as const
@@ -80,6 +83,7 @@ export function ContextPanel({
       >
         {tab === "analysis" ? (
           <>
+            {detail.thread.conversationState && <section className="context-section"><div className="section-title"><Icon name="shield" size={17} /><h3>{conversationLabels[detail.thread.conversationState]}</h3></div>{detail.thread.stateReasons?.map((reason, index) => <p className="context-explanation" key={index}>{readable(reason)}</p>)}</section>}
             <section className="context-section">
               <div className="section-title"><Icon name="spark" size={17} /><h3>Buyer message analysis</h3></div>
               <p className="context-explanation">Intent: {readable(detail.thread.intent)}</p>
@@ -90,13 +94,13 @@ export function ContextPanel({
               <LevelBadge kind="risk" level={detail.recommendation.risk} />
               <dl className="analysis-facts">
                 <div><dt>Next step</dt><dd>{detail.recommendation.recommendedStep || "Review buyer request"}</dd></div>
-                <div><dt>Delivery</dt><dd>{readable(detail.recommendation.deliveryState || "REVIEW_REQUIRED")}</dd></div>
+                <div><dt>Policy decision</dt><dd>{detail.recommendation.deliveryState === "AUTO_SEND" ? "Eligible for automatic reply" : readable(detail.recommendation.deliveryState || "REVIEW_REQUIRED")}</dd></div>
                 <div><dt>Confidence</dt><dd>{detail.recommendation.confidence !== null && Number.isFinite(detail.recommendation.confidence) ? `${Math.round(detail.recommendation.confidence * 100)}%` : "Unavailable"}</dd></div>
                 {Number.isFinite(detail.recommendation.confidenceThreshold) && <div><dt>Auto-send threshold</dt><dd>{Math.round(detail.recommendation.confidenceThreshold * 100)}%</dd></div>}
-                <div><dt>Draft source</dt><dd>{sample ? "Sample template" : detail.recommendation.draftSource === "openai" ? "OpenAI generated" : detail.recommendation.draftSource === "template" ? "Reviewed template fallback" : "Unavailable"}</dd></div>
+                <div><dt>Draft source</dt><dd>{sample ? "Sample template" : detail.recommendation.generationProvider === "test_stub" ? "Local test candidate" : detail.recommendation.draftSource === "openai" ? "OpenAI generated" : detail.recommendation.draftSource === "template" ? "Reviewed template fallback" : "Unavailable"}</dd></div>
                 <div><dt>Policy</dt><dd>{detail.recommendation.policyVersion}</dd></div>
               </dl>
-              <p className="context-footnote">Risk approval is independent of confidence. Delivery is simulated; no marketplace or order action is performed.</p>
+              <p className="context-footnote">The backend autonomy mode governs whether an eligible reply is sent. Risk approval is independent of confidence. Delivery is simulated; no marketplace or order action is performed.</p>
               <details className="audit-details" open><summary>Decision reasons</summary><ul>{detail.recommendation.reasons.map((reason, index) => <li key={index}>{readable(reason)}</li>)}</ul></details>
               {detail.recommendation.modelStatus === "fallback" && <details className="audit-details"><summary>Drafting availability</summary><p>{detail.recommendation.modelNotice || "Live OpenAI drafting is unavailable. Manual replies remain available."}</p></details>}
             </section>}
@@ -201,7 +205,7 @@ export function ContextPanel({
                 <span>
                   Policy {detail.recommendation.policyVersion}
                   <br />
-                  <small>Recommendations stay subject to seller review.</small>
+                  <small>Deterministic rules govern every reply.</small>
                 </span>
               </div>
             )}
@@ -213,12 +217,11 @@ export function ContextPanel({
               <h3>Decision history</h3>
             </div>
             <p className="context-explanation">
-              Recommendations and recorded seller decisions for this
-              conversation.
+              Escala actions, delivery attempts, and your decisions.
             </p>
             {events.length === 0 ? (
               <EmptyState icon="history" title="No activity yet">
-                Generate a recommendation to start the audit trail.
+                Recorded actions will appear here as the conversation progresses.
               </EmptyState>
             ) : (
               <ol className="audit-list">
@@ -241,13 +244,15 @@ export function ContextPanel({
                       <p>
                         {event.reply
                           ? "Reply saved · simulated delivery"
-                          : event.actor === "seller"
+                          : event.transportState ? `Delivery ${readable(event.transportState).toLowerCase()}` : event.actor === "seller"
                           ? "Seller decision recorded"
-                          : "Recommendation prepared"}
+                          : event.type === "inbound" ? "Buyer message received" : event.type === "autonomy" ? "Automatic policy decision" : "Workspace action recorded"}
                       </p>
                       <time dateTime={event.createdAt}>
                         {dateLabel(event.createdAt, true)}
                       </time>
+                      {(event.reply?.finalText || event.attemptedText) && <p className="audit-excerpt">“{event.reply?.finalText ?? event.attemptedText}”</p>}
+                      {event.reasonCodes[0] && <p className="audit-reason">{readable(event.reasonCodes[0])}</p>}
                       {event.reply && (
                         <details className="audit-details">
                           <summary>Reply delivery & edits</summary>
@@ -257,6 +262,8 @@ export function ContextPanel({
                           <p>Sensitive-action approval: {event.reply.sellerApproved ? "Explicitly recorded" : event.reply.risk !== "high" ? "Not required" : "Not recorded"} · Simulated delivery</p>
                           {event.reply.originalDraft && <p>Original draft: {event.reply.originalDraft}</p>}
                           <p>Final reply: {event.reply.finalText}</p>
+                          {event.reply.approvedText && <p>Exact approved text: {event.reply.approvedText}</p>}
+                          {event.reply.providerMessageId && <p>Delivery reference: {event.reply.providerMessageId}</p>}
                         </details>
                       )}
                       {event.reasonCodes.length > 0 && (
@@ -271,10 +278,7 @@ export function ContextPanel({
                           </ul>
                           {event.evidenceIds.length > 0 && (
                             <p>
-                              {event.evidenceIds.length} evidence{" "}
-                              {event.evidenceIds.length === 1
-                                ? "reference"
-                                : "references"}
+                              Evidence: {event.evidenceIds.join(", ")}
                             </p>
                           )}
                         </details>

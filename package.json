@@ -12,6 +12,8 @@
     "test": "node --test",
     "test:integration": "node --test tests/inbox-integration.test.mjs",
     "refresh:analysis": "node --env-file=.env.local --import tsx scripts/refresh-analysis.mts",
+    "worker": "node --env-file=.env.local --import tsx scripts/process-inbox.mts",
+    "worker:once": "node --env-file=.env.local --import tsx scripts/process-inbox.mts --once",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

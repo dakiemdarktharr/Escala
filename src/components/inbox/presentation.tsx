@@ -13,6 +13,25 @@ export const actionLabels: Record<RecommendationAction, string> = {
   ESCALATE: "Escalate to a person",
 };
 
+export const conversationLabels = {
+  AWAITING_PROCESSING: "Awaiting Escala",
+  AUTO_HANDLED: "Auto handled",
+  WAITING_FOR_BUYER: "Waiting for buyer",
+  WAITING_FOR_SELLER_REVIEW: "Needs review",
+  APPROVAL_REQUIRED: "Needs approval",
+  RESOLVED: "Resolved",
+  ESCALATED: "Escalated",
+  SEND_FAILED: "Send failed",
+};
+export function needsSeller(thread: InboxThreadSummary) {
+  return thread.conversationState
+    ? ["AWAITING_PROCESSING", "WAITING_FOR_SELLER_REVIEW", "APPROVAL_REQUIRED", "ESCALATED", "SEND_FAILED"].includes(thread.conversationState)
+    : thread.requiresAction === true;
+}
+export function autoHandled(thread: InboxThreadSummary) {
+  return thread.conversationState === "AUTO_HANDLED" || (thread.conversationState === "WAITING_FOR_BUYER" && thread.autonomyDecision === "AUTO_SEND");
+}
+
 export function readable(value: string) {
   if (!value.includes("_") && !/^[A-Z\d :]+$/.test(value)) return value;
   const text = value.replaceAll("_", " ").replaceAll(":", ": ").toLowerCase();
@@ -143,6 +162,7 @@ const sentimentSources: Record<SentimentAnalysis["source"], string> = {
   unavailable: "Unavailable",
 };
 const languageLabels: Record<SentimentAnalysis["language"], string> = {
+  unknown: "Awaiting analysis",
   english: "English",
   vietnamese: "Vietnamese",
   mixed: "Mixed language",

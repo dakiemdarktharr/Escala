@@ -8,13 +8,16 @@ import {
   dateLabel,
   EmptyState,
   LoadingState,
+  needsSeller,
+  autoHandled,
+  conversationLabels,
 } from "./presentation";
 
 export type QueueState =
   | { status: "loading" }
   | { status: "error"; error: string }
   | { status: "ready"; threads: InboxThreadSummary[] };
-export type QueueFilter = "all" | "unread" | "urgent";
+export type QueueFilter = "needs-you" | "auto-handled" | "all";
 
 export function ConversationQueue({
   state,
@@ -44,7 +47,7 @@ export function ConversationQueue({
   const matches = threads.filter(
     (thread) =>
       (filter === "all" ||
-        (filter === "unread" ? thread.unread : thread.urgency === "high")) &&
+        (filter === "needs-you" ? needsSeller(thread) : autoHandled(thread))) &&
       [
         thread.buyerName,
         thread.preview,
@@ -62,7 +65,7 @@ export function ConversationQueue({
     <div className="queue">
       <div className="queue-heading">
         <h2>
-          Conversations <span>{threads.length}</span>
+          Attention inbox <span>{threads.length}</span>
         </h2>
         <button
           className="icon-button"
@@ -95,9 +98,9 @@ export function ConversationQueue({
         >
           {(
             [
+              ["needs-you", "Needs you"],
+              ["auto-handled", "Auto handled"],
               ["all", "All"],
-              ["unread", "Unread"],
-              ["urgent", "Urgent"],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -106,11 +109,11 @@ export function ConversationQueue({
               onClick={() => setFilter(value)}
             >
               {label}
-              {value === "urgent" &&
-                threads.some((thread) => thread.urgency === "high") && (
+              {value === "needs-you" &&
+                threads.some(needsSeller) && (
                   <span className="tab-count">
                     {
-                      threads.filter((thread) => thread.urgency === "high")
+                      threads.filter(needsSeller)
                         .length
                     }
                   </span>
@@ -201,12 +204,10 @@ export function ConversationQueue({
                     )}
                   </div>
                   <p className="case-preview">{thread.preview}</p>
-                  {(thread.urgency === "high" || thread.requiresAction) && <div className="case-tags">
-                    {thread.urgency === "high" && <span className="badge level-high">Urgent</span>}
-                    {thread.requiresAction === true && (
-                      <span className="badge action-needed">Needs review</span>
-                    )}
-                  </div>}
+                  <div className="case-tags">
+                    <span className={`conversation-status status-${thread.conversationState ?? "unknown"}`}>{thread.conversationState ? conversationLabels[thread.conversationState] : thread.requiresAction ? "Needs review" : "Conversation"}</span>
+                    {thread.urgency === "high" && <span className="priority-note" title="Urgency is separate from reply risk">High priority</span>}
+                  </div>
                   </div>
                 </button>
               </li>
@@ -216,7 +217,7 @@ export function ConversationQueue({
       </div>
       <div className="queue-footer">
         <Icon name="shield" size={14} />
-        <span>Every decision stays with you.</span>
+        <span>Routine replies handled. You stay in control.</span>
       </div>
     </div>
   );

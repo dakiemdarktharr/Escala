@@ -103,6 +103,9 @@ function fixtures(): ThreadDetailResponse[] {
         priorityScore: samplePriority[message.scenario],
         priorityReasons: message.expectedUrgencyReasons,
         requiresAction: true,
+        contextRevision: 1,
+        currentBuyerMessageId: message.id,
+        conversationState: sampleRisk[message.scenario] === "high" ? "APPROVAL_REQUIRED" : "WAITING_FOR_SELLER_REVIEW",
         sentiment: {
           label: "unknown",
           confidence: null,
@@ -126,6 +129,8 @@ function fixtures(): ThreadDetailResponse[] {
         confidenceThreshold: 0.9,
         draftSource: "template",
         status: "pending",
+        contextRevision: 1,
+        buyerMessageId: message.id,
         draft: sampleDrafts[message.scenario] || null,
         reasons: message.safeFallback
           ? [message.safeFallback]
@@ -184,6 +189,17 @@ export function createSampleClient(): InboxClient {
   const store = fixtures();
   const replies = new Map<string, SendReplyResponse>();
   return {
+    async autonomy() { throw new RequestError("Autonomy is unavailable in the static sample preview."); },
+    async updateAutonomy() { throw new RequestError("Connect workspace data to change autonomy."); },
+    async retryReply() { throw new RequestError("Sample preview has no transport attempts to retry."); },
+    async updateConversation(id, input) {
+      const item = store.find((entry) => entry.thread.id === id);
+      if (!item) throw new RequestError("Sample conversation not found.");
+      item.thread.conversationState = input.state;
+      item.thread.requiresAction = input.state !== "RESOLVED";
+      item.audit.push({ id: crypto.randomUUID(), type: "conversation_state", actor: "seller", action: input.state, reasonCodes: ["Sample state only; resets on reload."], evidenceIds: [], createdAt: new Date().toISOString() });
+      return structuredClone(item);
+    },
     async inbox() {
       return {
         threads: store.map((entry) => ({ ...entry.thread })),
@@ -258,6 +274,7 @@ export function createSampleClient(): InboxClient {
       // Preview-only affordance; the API's deterministic policy remains authoritative.
       const risky = item.recommendation?.risk === "high" || /refund|cancel|payment|discount|compensat|guarantee|replace|reship/i.test(input.text);
       if (risky && !input.sellerApproved) throw new RequestError("Approve this sensitive reply before sending.", "APPROVAL_REQUIRED");
+      if (input.sellerApproved && input.approvedText !== input.text.trim()) throw new RequestError("Approve the exact current reply.", "APPROVAL_REQUIRED");
       const createdAt = new Date().toISOString();
       const message = {
         id: crypto.randomUUID(), threadId: id, role: "seller" as const,
@@ -280,6 +297,8 @@ export function createSampleClient(): InboxClient {
       item.messages.push(message);
       item.thread.preview = message.text;
       item.thread.updatedAt = createdAt;
+      item.thread.conversationState = "WAITING_FOR_BUYER";
+      item.thread.requiresAction = false;
       item.audit.push(audit);
       const result = { message, audit, recommendation };
       replies.set(input.requestId, structuredClone(result));

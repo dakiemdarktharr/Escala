@@ -2,7 +2,7 @@
 
 ## Product outcome
 
-Deliver a working seller support-operations dashboard inspired by Shopee Seller Centre patterns. A seller can inspect a prioritized inbox, understand why a conversation needs attention, review verified knowledge evidence, request a safe recommendation, and record an approval/edit/escalation decision. This is a seller-side decision-support tool, not an autonomous marketplace agent.
+Deliver an autonomous seller inbox in the existing Escala architecture. New buyer events are processed in the background; deterministic policy permits only verified, safe simulated replies while ON. Sensitive/uncertain drafts preload for seller review. A structured opening brief explains persisted activity and current attention backlog. No real marketplace sending or order mutation is authorized.
 
 ## Equal worker split
 
@@ -17,8 +17,8 @@ Deliver a working seller support-operations dashboard inspired by Shopee Seller 
 
 1. Open the seeded inbox and see counts plus sorted urgency/reason labels.
 2. Select a thread and review buyer messages, product/order snapshot, and relevant verified evidence.
-3. Generate or refresh a recommendation. If the model/provider fails or evidence is missing, the interface clearly offers non-automatic seller review.
-4. Approve/edit a safe draft, ask one clarification, or escalate. This only records a local seller decision; never sends a buyer message or mutates a marketplace order.
+3. Open an automatically prepared recommendation. Provider/classifier/grounding failure remains held for seller review; regeneration is an explicit optional action.
+4. Review/edit/approve/send through simulated transport, discard, mark manual, escalate or explicitly resolve. No marketplace message or order mutation occurs.
 5. Reopen the page and see persisted state and audit history.
 
 ## Acceptance criteria
