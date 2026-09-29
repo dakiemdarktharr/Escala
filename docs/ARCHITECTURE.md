@@ -1,5 +1,9 @@
 # Escala architecture
 
+## Simplified seller presentation (2026-09-29)
+
+The existing inbox components present one seller status and one reply/action area. Shared conversation enums, backend policy, jobs, persistence and transport are unchanged; friendly labels and the broader Handled filter are presentation projections. Technical analysis/evidence/activity remain in the existing context panel, closed by default. The existing native-dialog Drawer also supplies centered sensitive-reply confirmation; no second modal framework, API or approval type is introduced. Confirmation passes the unchanged exact-text/revision contract to the same reply service and is invalidated when its displayed context changes. The stable brief/acknowledged timestamp mechanism is retained beneath shorter narrative copy.
+
 ## System flow
 
 ```text

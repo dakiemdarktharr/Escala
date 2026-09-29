@@ -14,7 +14,7 @@ export function Drawer({
   open: boolean;
   onClose: () => void;
   title: string;
-  side?: "left" | "right";
+  side?: "left" | "right" | "center";
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);

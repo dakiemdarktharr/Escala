@@ -17,10 +17,9 @@ import {
   EmptyState,
   LoadingState,
   Notice,
-  PriorityBadge,
-  readable,
-  SentimentBadge,
-  conversationLabels,
+  conversationLabel,
+  requestLabel,
+  requestSummary,
 } from "./presentation";
 import { RecommendationPanel } from "./recommendation-panel";
 
@@ -30,8 +29,15 @@ type DetailState =
   | { status: "error"; error: string };
 
 export interface ComposerDraft { text: string; recommendationId?: string; contextRevision?: number; seenRecommendationKey?: string }
-type ApprovalSnapshot = { text: string; revision: number; recommendationId?: string };
+type ApprovalSnapshot = { text: string; revision: number; recommendationId?: string; context: string };
 const emptyComposer: ComposerDraft = { text: "" };
+
+// Bind the confirmation to the context the seller actually saw, including policy and evidence.
+function approvalContext(detail: ThreadDetailResponse) {
+  const { thread } = detail;
+  return JSON.stringify([thread.contextRevision, thread.currentBuyerMessageId, thread.conversationState,
+    thread.intent, thread.stateReasons, thread.autonomyDecision, detail.recommendation, detail.order, detail.evidence]);
+}
 
 export function ThreadWorkspace({
   id,
@@ -72,7 +78,7 @@ export function ThreadWorkspace({
   const detailEpoch = useRef(0);
   const composerId = useId();
   const [approval, setApproval] = useState<ApprovalSnapshot | null>(null);
-  const [desktopContext, setDesktopContext] = useState(true);
+  const [desktopContext, setDesktopContext] = useState(false);
   const [writing, setWriting] = useState(false);
   const [approvalRequired, setApprovalRequired] = useState(false);
   const pendingReply = useRef<{ signature: string; requestId: string } | null>(null);
@@ -82,7 +88,8 @@ export function ThreadWorkspace({
   const prepared = state.status === "ready" ? state.detail.recommendation : null;
   const conversationState = state.status === "ready" ? state.detail.thread.conversationState : undefined;
   const consumedDraft = Boolean(composer.text.trim() && composer.recommendationId && state.status === "ready" && (prepared?.id !== composer.recommendationId || prepared?.status !== "pending"));
-  const approved = Boolean(!consumedDraft && approval && approval.text === composer.text.trim() && approval.revision === revision);
+  const currentContext = state.status === "ready" ? approvalContext(state.detail) : "";
+  const approved = Boolean(!consumedDraft && approval && approval.text === composer.text.trim() && approval.revision === revision && approval.recommendationId === composer.recommendationId && approval.context === currentContext);
   const staleDraft = Boolean(composer.text.trim() && composer.contextRevision !== undefined && revision !== undefined && composer.contextRevision !== revision);
   const preparedKey = prepared ? `${prepared.id}:${prepared.contextRevision ?? revision}` : undefined;
   useEffect(() => {
@@ -114,6 +121,11 @@ export function ThreadWorkspace({
 
   async function sendReply(text: string, recommendationId?: string, mode: SendReplyInput["mode"] = "seller", approvedSnapshot: ApprovalSnapshot | null = null) {
     if (busy.current || !text.trim() || revision === undefined || staleDraft || consumedDraft) return;
+    if (approvedSnapshot && (approvedSnapshot.text !== text.trim() || approvedSnapshot.revision !== revision || approvedSnapshot.recommendationId !== recommendationId || approvedSnapshot.context !== currentContext)) {
+      setApproval(null);
+      setSaveError("The reply or conversation changed. Review it again before sending.");
+      return;
+    }
     busy.current = true;
     detailEpoch.current += 1;
     setSaving(true);
@@ -143,7 +155,7 @@ export function ThreadWorkspace({
       setApproval(null);
       setWriting(false);
       setApprovalRequired(false);
-      setSuccess(sample ? "Sample reply added. It resets on reload." : "Reply saved to the conversation. Delivery is simulated; no marketplace message was sent.");
+      setSuccess("Reply sent.");
       onChanged();
       try {
         const refreshed = await client.thread(id);
@@ -158,6 +170,7 @@ export function ThreadWorkspace({
           onDraftChange(draftKey, { ...composer, text, recommendationId, contextRevision: revision });
           setApprovalRequired(true);
           setApproval(null);
+          setSaveError("This reply needs your approval. Review it, then choose Approve & send.");
           document.getElementById(composerId)?.focus();
         }
         if (error instanceof RequestError && error.code === "STALE_CONTEXT") {
@@ -187,7 +200,7 @@ export function ThreadWorkspace({
       .then((detail) => {
         if (!controller.signal.aborted && !busy.current && epoch === detailEpoch.current) {
           setState({ status: "ready", detail });
-          setApproval((current) => current && (current.revision !== detail.thread.contextRevision || (current.recommendationId && (detail.recommendation?.id !== current.recommendationId || detail.recommendation?.status !== "pending"))) ? null : current);
+          setApproval((current) => current && (current.context !== approvalContext(detail) || current.revision !== detail.thread.contextRevision || (current.recommendationId && (detail.recommendation?.id !== current.recommendationId || detail.recommendation?.status !== "pending"))) ? null : current);
         }
       })
       .catch((error: unknown) => {
@@ -208,6 +221,7 @@ export function ThreadWorkspace({
 
   async function generate() {
     if (busy.current || state.status !== "ready") return;
+    setApproval(null);
     busy.current = true;
     detailEpoch.current += 1;
     setGenerating(true);
@@ -313,7 +327,7 @@ export function ThreadWorkspace({
       if (mounted.current) {
         setState({ status: "ready", detail });
         if (composer.text.trim() === result.message.text.trim()) onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
-        setApproval(null); setSuccess("Reply delivered through simulated transport."); onChanged();
+        setApproval(null); setSuccess("Reply sent."); onChanged();
       }
     } catch (error) { if (mounted.current) setSaveError(errorMessage(error)); }
     finally { busy.current = false; if (mounted.current) setSaving(false); }
@@ -366,14 +380,31 @@ export function ThreadWorkspace({
   // An early approval affordance; the server checks both thread context and final text.
   const needsApproval = approvalRequired || thread.conversationState === "APPROVAL_REQUIRED" || recommendation?.deliveryState === "APPROVAL_REQUIRED";
   const handled = ["WAITING_FOR_BUYER", "AUTO_HANDLED", "RESOLVED"].includes(thread.conversationState ?? "");
-  const canSend = !saving && !generating && Boolean(composer.text.trim()) && !staleDraft && !consumedDraft && revision !== undefined && (!needsApproval || approved);
+  const canSend = !saving && !generating && Boolean(composer.text.trim()) && !staleDraft && !consumedDraft && revision !== undefined;
+  const uncertain = thread.intent === "unknown" || recommendation?.deliveryState === "MANUAL_ONLY";
+  const showComposer = writing || (!handled && !uncertain) || staleDraft || consumedDraft || (handled && Boolean(composer.text.trim()));
+  const editing = writing || !composer.recommendationId || staleDraft || consumedDraft;
+  const latestReply = detail.messages.findLast((message) => message.role === "seller");
+  function requestSend() {
+    if (!canSend || busy.current || revision === undefined) return;
+    if (needsApproval) {
+      setApproval({ text: composer.text.trim(), revision, recommendationId: composer.recommendationId, context: currentContext });
+    } else {
+      void sendReply(composer.text, composer.recommendationId);
+    }
+  }
+  function editReply() {
+    setWriting(true);
+    setApproval(null);
+    requestAnimationFrame(() => document.getElementById(composerId)?.focus());
+  }
   const context = (
     <ContextPanel
       detail={detail}
       tab={contextTab}
       onTabChange={onContextTab}
       sample={sample}
-      onClose={() => setDesktopContext(false)}
+      onClose={() => { setDesktopContext(false); onContextClose(); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".analysis-toggle")?.focus()); }}
     />
   );
   return (
@@ -390,21 +421,9 @@ export function ThreadWorkspace({
           <Avatar name={thread.buyerName} />
           <div className="thread-identity">
             <h2 id="thread-title">{thread.buyerName}</h2>
-            <span>
-              {thread.orderId
-                ? `Order #${thread.orderId}`
-                : "Buyer conversation"}
-              <span className="identity-divider" aria-hidden="true" />
-              Synthetic inbox
-            </span>
+            <span><span className={`conversation-status status-${thread.conversationState ?? "unknown"}`}>{conversationLabel(thread)}</span><span className="identity-divider" aria-hidden="true" />{requestLabel(thread.intent)}</span>
           </div>
-          <button className="button secondary analysis-toggle" onClick={viewAnalysis}><Icon name="info" size={16} />View analysis</button>
-          <div className="thread-summary" aria-label="Buyer message summary">
-            {thread.conversationState && <span className={`conversation-status status-${thread.conversationState}`}>{conversationLabels[thread.conversationState]}</span>}
-            <PriorityBadge score={thread.priorityScore} />
-            {thread.sentiment && <SentimentBadge sentiment={thread.sentiment} />}
-            <span className="summary-intent" title={readable(thread.intent)}>{readable(thread.intent)}</span>
-          </div>
+          <button className="text-button analysis-toggle" aria-expanded={desktopContext || contextOpen} onClick={viewAnalysis}><Icon name="info" size={16} />View analysis</button>
         </header>
         <div className="thread-scroll" ref={historyRef} tabIndex={0} aria-label="Conversation history">
           <section
@@ -420,6 +439,8 @@ export function ThreadWorkspace({
                 {detail.messages.map((message) => (
                   <li
                     key={message.id}
+                    id={`message-${message.id}`}
+                    tabIndex={-1}
                     className={`message message-${message.role}`}
                   >
                     {message.role !== "system" && (
@@ -441,7 +462,6 @@ export function ThreadWorkspace({
                       <p>{message.text}</p>
                     </div>
                     {message.sentBy === "escala" && <p className="automatic-attribution"><Icon name="spark" size={11} />Sent automatically by Escala</p>}
-                    {message.delivery === "simulated" && <p className="message-meta">{sample ? "Sample simulated delivery · resets on reload" : "Simulated delivery · saved in Escala"}</p>}
                   </li>
                 ))}
               </ol>
@@ -449,78 +469,66 @@ export function ThreadWorkspace({
           </section>
         </div>
         <div className="reply-dock">
-          <div className="copilot-scroll">
           {generateError && <Notice variant="error">{generateError}</Notice>}
-          {generating && (
-            <Notice>
-              Preparing the recommendation and checking its supporting evidence.
-              You can keep reviewing the conversation.
-            </Notice>
-          )}
-          {!handled && recommendation?.draft?.trim() && recommendation.status === "pending" && (recommendation.contextRevision === undefined || recommendation.contextRevision === revision) ? (
-            <RecommendationPanel
-              key={recommendation.id}
-              recommendation={recommendation}
-              onGenerate={generate}
-              onEdit={() => {
-                onDraftChange(draftKey, { text: recommendation.draft ?? "", recommendationId: recommendation.id, contextRevision: revision, seenRecommendationKey: preparedKey });
-                setApproval(null);
-                document.getElementById(composerId)?.focus();
-              }}
-              onSend={(mode, sellerApproved) => sendReply(recommendation.draft ?? "", recommendation.id, mode, sellerApproved && revision !== undefined ? { text: recommendation.draft!.trim(), revision } : null)}
-              onDecline={() => { void decide({ decision: "decline" }); }}
-              busy={generating || saving || staleDraft || consumedDraft || revision === undefined}
-              sample={sample}
-            />
-          ) : !handled ? (
-            <div className="copilot-idle">
-              <span><Icon name="shield" size={15} />{thread.conversationState === "AWAITING_PROCESSING" ? "Awaiting background processing" : recommendation?.status === "declined" ? "Draft discarded · write your own reply" : "Your review is needed"}</span>
-              {thread.stateReasons?.length ? <p>{thread.stateReasons.map(readable).join(" · ")}</p> : null}
-              {recommendation?.modelStatus === "fallback" && <details className="copilot-details"><summary>Drafting availability</summary><p>{recommendation.modelNotice || "Live OpenAI drafting is unavailable. You can write your own reply below."}</p></details>}
-            </div>
-          ) : null}
-          {detail.deliveries?.filter((delivery) => delivery.state === "FAILED").map((delivery) => <div className="failed-delivery" key={delivery.id}><Icon name="alert" size={15} /><span>Send failed. {delivery.error}</span><button className="text-button" disabled={saving} onClick={() => { void retryDelivery(delivery.id); }}>Retry delivery</button></div>)}
-          </div>
-          {handled && !writing && !composer.text.trim() ? <div className="handled-summary"><Icon name="check" size={20} /><div><strong>{thread.conversationState === "RESOLVED" ? "Conversation resolved" : "All set. Waiting for the buyer."}</strong><p>{detail.messages.some((message) => message.sentBy === "escala") ? "Escala’s reply is in the conversation above." : "Your reply is in the conversation above."}</p></div><button className="text-button" onClick={() => setWriting(true)}>Write a follow-up</button></div> : <section className="reply-composer" aria-labelledby={`${composerId}-heading`}>
-            <h3 className="sr-only" id={`${composerId}-heading`}>Reply to buyer</h3>
-            <div className="draft-editor">
+          {generating && <Notice>Preparing a reply…</Notice>}
+          {!handled && !(writing && !composer.recommendationId) && (uncertain || thread.conversationState === "AWAITING_PROCESSING" || Boolean(composer.recommendationId && composer.text)) && <RecommendationPanel intent={thread.intent} needsApproval={needsApproval} uncertain={uncertain} processing={thread.conversationState === "AWAITING_PROCESSING"} />}
+          {detail.deliveries?.filter((delivery) => delivery.state === "FAILED").map((delivery) => <div className="failed-delivery" key={delivery.id}><Icon name="alert" size={15} /><span>The reply could not be sent.</span><button className="text-button" disabled={saving} onClick={() => { void retryDelivery(delivery.id); }}>Retry delivery</button></div>)}
+          {handled && !showComposer ? <div className="handled-summary"><Icon name="check" size={20} /><div><strong>{thread.conversationState === "RESOLVED" ? "Conversation resolved" : latestReply?.sentBy === "escala" ? "Escala replied automatically" : "Reply sent · waiting for the customer"}</strong><p>{requestSummary(thread.intent)} {latestReply ? "The reply is saved in this conversation." : "No reply has been recorded."}</p></div>{latestReply && <button className="text-button" onClick={() => { const message = document.getElementById(`message-${latestReply.id}`); message?.scrollIntoView({ block: "nearest", behavior: "smooth" }); message?.focus({ preventScroll: true }); }}>View reply</button>}</div> : showComposer ? <section className="reply-composer" aria-labelledby={`${composerId}-heading`}>
+            <h3 className="sr-only" id={`${composerId}-heading`}>Reply to customer</h3>
+            <div className={`draft-editor${editing ? " is-editing" : ""}`}>
               <div className="editor-label">
-                <label htmlFor={composerId}>{consumedDraft || staleDraft ? "Retained draft · review required" : composer.recommendationId ? "Escala suggested · ready for your review" : "Your reply"}</label>
-                {(composer.text || composer.recommendationId) && <button className="text-button" disabled={saving} onClick={() => {
-                  if (composer.recommendationId && recommendation?.status === "pending") void decide({ decision: "decline" });
-                  onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
-                  setApproval(null);
-                  setSaveError(null);
-                }}>Discard draft</button>}
+                <label htmlFor={editing ? composerId : undefined}>{consumedDraft || staleDraft ? "Retained draft · review required" : composer.recommendationId ? "Suggested reply" : "Your reply"}</label>
+                {!editing && <button className="text-button" disabled={saving} onClick={editReply}>Edit</button>}
               </div>
-              <textarea id={composerId} value={composer.text} onChange={(event) => updateComposer(event.target.value)} rows={2} maxLength={2000} placeholder="Write a message…" disabled={saving} aria-describedby={`${composerId}-help`} onKeyDown={(event) => {
+              {editing ? <textarea id={composerId} value={composer.text} onChange={(event) => updateComposer(event.target.value)} rows={3} maxLength={2000} placeholder="Write a message…" disabled={saving} aria-describedby={`${composerId}-help`} onKeyDown={(event) => {
                 if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing) {
                   event.preventDefault();
-                  if (canSend) void sendReply(composer.text, composer.recommendationId, "seller", approved ? approval : null);
+                  requestSend();
                 }
-              }} />
+              }} /> : <p className="suggested-reply">{composer.text}</p>}
             </div>
-            {staleDraft && <Notice variant="warning">A new buyer message changed the context. Your draft is retained. <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); }}>I reviewed the latest message</button></Notice>}
-            {consumedDraft && !staleDraft && <Notice variant="warning">{prepared?.id === composer.recommendationId && prepared?.status === "sent" ? "This suggestion was already sent. Review the latest reply before sending a follow-up." : "This suggestion is no longer pending. Review the conversation before using your retained draft."} Your text is retained. <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); setWriting(true); }}>I reviewed this as a follow-up</button></Notice>}
-            {revision === undefined && <Notice variant="warning">Conversation version unavailable. Refresh this conversation before sending.</Notice>}
-            {needsApproval && <label className="reply-approval"><input type="checkbox" checked={approved} onChange={(event) => setApproval(event.target.checked && revision !== undefined ? { text: composer.text.trim(), revision, recommendationId: composer.recommendationId } : null)} disabled={saving || staleDraft || consumedDraft || !composer.text.trim()} />I approve this exact reply and its sensitive action.</label>}
+            {staleDraft && <Notice variant="warning">A new customer message changed the context. Your draft is retained. <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); }}>I reviewed the latest message</button></Notice>}
+            {consumedDraft && !staleDraft && <Notice variant="warning">{prepared?.id === composer.recommendationId && prepared?.status === "sent" ? "This suggestion was already sent. Review the latest reply before sending a follow-up." : "This suggestion is no longer available. Review the conversation before using your retained draft."} <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); setWriting(true); }}>I reviewed this as a follow-up</button></Notice>}
+            {revision === undefined && <Notice variant="warning">Refresh this conversation before sending.</Notice>}
             {(saveError || success) && <div className="composer-feedback">{saveError ? <Notice variant="error">{saveError} Your reply is retained.</Notice> : <Notice variant="success">{success}</Notice>}</div>}
             <div className="composer-footer">
-              <p id={`${composerId}-help`}><span>Enter for a new line · Ctrl/⌘ Enter to send</span><span>Simulated delivery · no order changes</span></p>
-              <button className="button primary" disabled={!canSend} onClick={() => sendReply(composer.text, composer.recommendationId, "seller", approved ? approval : null)}><Icon name="send" size={16} />{saving ? "Sending…" : needsApproval ? "Approve & send" : "Send reply"}</button>
+              <p id={`${composerId}-help`}>{needsApproval ? "This reply needs your approval before sending." : editing ? "Ctrl/⌘ Enter to send" : "Review the reply before sending."}</p>
+              <button className="button primary" disabled={!canSend} onClick={requestSend}><Icon name="send" size={16} />{saving ? "Sending…" : needsApproval ? "Approve & send" : "Send reply"}</button>
             </div>
-          </section>}
-          {handled && !writing && !composer.text.trim() && (saveError || success) && <Notice variant={saveError ? "error" : "success"}>{saveError ?? success}</Notice>}
-          <div className="conversation-actions"><button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("WAITING_FOR_SELLER_REVIEW"); }}>Mark manual</button><button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("ESCALATED"); }}>Escalate</button>{thread.conversationState !== "RESOLVED" && <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("RESOLVED"); }}>Mark resolved</button>}</div>
+          </section> : !handled && <div className="manual-reply-action"><button className="button primary" disabled={saving} onClick={() => { onDraftChange(draftKey, { text: "", contextRevision: revision, seenRecommendationKey: composer.seenRecommendationKey }); editReply(); }}>Reply manually</button><button className="text-button" onClick={viewAnalysis}>View analysis</button></div>}
+          {!showComposer && (saveError || success) && <Notice variant={saveError ? "error" : "success"}>{saveError ?? success}</Notice>}
+          <details className="conversation-options">
+            <summary>More options</summary>
+            <div className="conversation-actions">
+              {handled && !showComposer && <button className="text-button" onClick={editReply}>Write a follow-up</button>}
+              {!handled && <button className="text-button" disabled={saving || generating} onClick={() => { void generate(); }}>Prepare another reply</button>}
+              {(composer.text || composer.recommendationId) && <button className="text-button" disabled={saving} onClick={() => {
+                if (composer.recommendationId && recommendation?.status === "pending") void decide({ decision: "decline" });
+                onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
+                setApproval(null); setSaveError(null); setWriting(true);
+              }}>Discard draft</button>}
+              <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("WAITING_FOR_SELLER_REVIEW"); }}>Handle manually</button>
+              <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("ESCALATED"); }}>Escalate</button>
+              {thread.conversationState !== "RESOLVED" && <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("RESOLVED"); }}>Mark resolved</button>}
+            </div>
+          </details>
         </div>
       </section>
       <aside className="desktop-context" aria-label="Analysis, evidence and activity">
         {context}
       </aside>
+      <Drawer open={Boolean(approval && approved)} onClose={() => setApproval(null)} title={thread.intent === "cancellation" ? "Confirm cancellation-related reply" : "Confirm sensitive reply"} side="center">
+        {approval && <div className="approval-confirmation">
+          <p>This message discusses a sensitive request. No order change will occur automatically.</p>
+          <div className="confirmation-reply"><span>Reply to {thread.buyerName}</span><p>{approval.text}</p></div>
+          <p className="confirmation-context">Confirmation applies only to this exact reply and the conversation you reviewed.</p>
+          <div className="confirmation-actions"><button className="button secondary" onClick={() => setApproval(null)}>Cancel</button><button className="button primary" disabled={!approved || !canSend} onClick={() => { if (approved && canSend) { const snapshot = approval; setApproval(null); void sendReply(snapshot.text, snapshot.recommendationId, "seller", snapshot); } }}>Confirm &amp; send</button></div>
+        </div>}
+      </Drawer>
       <Drawer
         open={contextOpen}
         onClose={onContextClose}
-        title="Conversation context"
+        title="Conversation analysis"
       >
         {context}
       </Drawer>

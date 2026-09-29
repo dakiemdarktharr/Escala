@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import type { AutonomyBrief, AutonomyMode, AutonomySettings, InboxResponse } from "@/domain/contracts";
+import type { AutonomyBrief, AutonomyMode, AutonomySettings } from "@/domain/contracts";
 import { Drawer } from "@/components/ui/drawer";
 import { Icon } from "@/components/ui/icon";
 import { apiClient, errorMessage } from "./api";
@@ -64,7 +64,6 @@ export function InboxWorkspace({
   const [sampleClient] = useState(createSampleClient);
   const client = mode === "sample" ? sampleClient : apiClient;
   const [queue, setQueue] = useState<QueueState>({ status: "loading" });
-  const [counts, setCounts] = useState<InboxResponse["counts"] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialThreadId);
   const [queueOpen, setQueueOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -78,7 +77,7 @@ export function InboxWorkspace({
   const [filter, setFilter] = useState<QueueFilter>("needs-you");
   const [settings, setSettings] = useState<AutonomySettings | null>(null);
   const [brief, setBrief] = useState<AutonomyBrief | null>(null);
-  const [briefOpen, setBriefOpen] = useState(true);
+  const [briefOpen, setBriefOpen] = useState(false);
   const [autonomyError, setAutonomyError] = useState<string | null>(null);
   const [updatingMode, setUpdatingMode] = useState(false);
   const acknowledged = useRef(new Set<string>());
@@ -115,7 +114,6 @@ export function InboxWorkspace({
                 : response.threads;
             return { status: "ready", threads: ordered };
           });
-          setCounts(response.counts);
           setSelectedId((current) =>
             current && response.threads.some((thread) => thread.id === current)
               ? current
@@ -129,7 +127,6 @@ export function InboxWorkspace({
             if (silent) setRefreshError(errorMessage(error));
             else {
               setQueue({ status: "error", error: errorMessage(error) });
-              setCounts(null);
             }
             setRefreshing(false);
           }
@@ -191,7 +188,6 @@ export function InboxWorkspace({
       const newMode = params.get("preview") === "1" ? "sample" : "api";
       if (newMode !== mode) {
         setQueue({ status: "loading" });
-        setCounts(null);
         setSettings(null);
         setBrief(null);
         setMode(newMode);
@@ -215,7 +211,6 @@ export function InboxWorkspace({
   function changeMode(nextMode: Mode) {
     setMode(nextMode);
     setQueue({ status: "loading" });
-    setCounts(null);
     setSelectedId(null);
     setRefreshError(null);
     setQueueOpen(false);
@@ -237,6 +232,7 @@ export function InboxWorkspace({
     setRefreshing(true);
     void loadQueue(queue.status === "ready");
   }
+  const quietBrief = brief && brief.counts.incoming === 0 && brief.counts.automaticReplies === 0 && brief.counts.resolved === 0 && brief.counts.failed === 0 && brief.counts.escalated === 0 && brief.events.length === 0 && brief.orderUpdates.length === 0;
   const queueProps = {
     state: queue,
     selectedId,
@@ -270,9 +266,8 @@ export function InboxWorkspace({
         </Link>
         <span className="topbar-divider" />
         <h1 className="workspace-label" id="inbox-heading" tabIndex={-1}>Inbox</h1>
-        {counts && <span className="topbar-count">{counts.needsReview} need review</span>}
         <div className="topbar-actions">
-          <label className={`autonomy-control autonomy-${settings?.mode ?? "unknown"}`} title={autonomyError ?? "Backend enforced autonomy · simulated delivery"}>
+          <label className={`autonomy-control autonomy-${settings?.mode ?? "unknown"}`} title={autonomyError ?? "Choose whether Escala prepares and sends eligible replies, only drafts, or pauses"}>
             <Icon name={settings?.mode === "ON" ? "spark" : "shield"} size={15} />
             <select aria-label="Escala autonomy" disabled={!settings || updatingMode || mode === "sample"} value={settings?.mode ?? "unknown"} onChange={(event) => { void changeAutonomy(event.target.value as AutonomyMode); }}>
               {!settings && <option value="unknown">{mode === "sample" ? "Static preview" : "Autonomy unavailable"}</option>}
@@ -288,57 +283,32 @@ export function InboxWorkspace({
               <option value="dark">Dark</option>
             </select>
           </label>
-          <span className="environment-label">
-            <span className="environment-dot" />
-            {mode === "sample" ? "Sample preview" : "Synthetic workspace"}
-          </span>
-          <button
-            className="mode-switch"
-            aria-label={mode === "sample" ? "Connect workspace" : "Sample preview"}
-            onClick={() => changeMode(mode === "sample" ? "api" : "sample")}
-          >
-            <Icon name={mode === "sample" ? "inbox" : "file"} size={15} />
-            <span>
-              {mode === "sample" ? "Connect workspace" : "Sample preview"}
-            </span>
-          </button>
-          <span
-            className="seller-avatar"
-            title="Seller review workspace"
-            aria-hidden="true"
-          >
-            S
-          </span>
+          <details className="demo-disclosure">
+            <summary><span className="environment-dot" />Demo mode</summary>
+            <div className="demo-details">
+              <strong>{mode === "sample" ? "Sample preview" : "Demo workspace"}</strong>
+              <p>Synthetic buyer messages. Simulated delivery. No marketplace messages or order changes.</p>
+              <p>{mode === "sample" ? "Illustrative replies stay in this browser session and reset on reload. No live AI is used." : "Local demo runs can use test-generated replies or fallback templates. View analysis to check the source of each reply."}</p>
+              <button className="text-button" onClick={() => changeMode(mode === "sample" ? "api" : "sample")}>{mode === "sample" ? "Use saved workspace" : "Explore sample preview"}</button>
+            </div>
+          </details>
         </div>
       </header>
       <div className="shell-body">
         <main className="workspace" id="workspace" tabIndex={-1}>
-          <div
-            className={`workspace-banner${mode === "sample" ? " sample-banner" : ""}`}
-          >
-            <Icon name={mode === "sample" ? "info" : "shield"} size={15} />
-            <span>
-              {mode === "sample"
-                ? "Sample preview. Illustrative recommendations and replies stay in this browser session and reset on reload."
-                : "Synthetic buyer messages. Replies are saved in Escala with simulated delivery; no marketplace messages or order changes occur."}
-            </span>
-            {mode === "sample" && (
-              <button className="text-button" onClick={() => changeMode("api")}>
-                Use workspace data
-              </button>
-            )}
-          </div>
           {mode === "api" && autonomyError && <div className="autonomy-error" role="status">{autonomyError}</div>}
           {brief && <section className={`seller-brief${briefOpen ? " is-open" : ""}`} aria-label="Opening activity brief">
             <div className="brief-heading">
               <Icon name="spark" size={18} />
-              <div><h2>{brief.firstVisit ? "Your workspace at a glance" : "While you were away"}</h2><p>{brief.since ? `Since ${dateLabel(brief.since, true)}` : "Recorded workspace activity"} · through {dateLabel(brief.asOf)}</p></div>
-              <div className="brief-totals"><span><strong>{brief.counts.automaticReplies}</strong> automatic replies</span><span><strong>{brief.counts.needsReview + brief.counts.approvalRequired}</strong> currently need you</span></div>
-              <button className="text-button" onClick={() => setBriefOpen(!briefOpen)} aria-expanded={briefOpen}>{briefOpen ? "Hide brief" : "View brief"}</button>
+              <div className="brief-story"><h2>{brief.firstVisit ? "Your workspace at a glance" : "While you were away"}</h2>
+                <p className="brief-narrative">{quietBrief ? brief.firstVisit ? "No activity has been recorded yet." : "No new activity since your last visit." : `${brief.counts.incoming} ${brief.counts.incoming === 1 ? "message arrived" : "messages arrived"}. Escala sent ${brief.counts.automaticReplies} ${brief.counts.automaticReplies === 1 ? "reply" : "replies"} automatically.`} <span className="brief-backlog">{brief.counts.needsReview + brief.counts.approvalRequired} {brief.counts.needsReview + brief.counts.approvalRequired === 1 ? "conversation is" : "conversations are"} waiting for you.</span></p>
+                <p>{brief.since ? `Since ${dateLabel(brief.since, true)}` : "Recorded activity"} · through {dateLabel(brief.asOf, true)}. Snapshot when you opened the inbox.</p>
+              </div>
+              <button className="text-button" onClick={() => setBriefOpen(!briefOpen)} aria-expanded={briefOpen} aria-controls="opening-summary">{briefOpen ? "Hide summary" : "View summary"}</button>
             </div>
-            {briefOpen && <div className="brief-content">
-              <p className="brief-summary">{brief.counts.incoming === 0 && brief.events.length === 0 && brief.orderUpdates.length === 0 ? "No new activity in this period." : `In this period: ${brief.counts.incoming} incoming messages · ${brief.counts.resolved} resolved${brief.counts.failed ? ` · ${brief.counts.failed} failed sends` : ""}${brief.counts.escalated ? ` · ${brief.counts.escalated} escalated` : ""}`}{` · ${brief.counts.approvalRequired} currently awaiting approval`}</p>
-              {(brief.events.length > 0 || brief.orderUpdates.length > 0) && <details className="brief-events"><summary>Activity & order updates</summary><ul>{[...brief.orderUpdates, ...brief.events].slice(0, 12).map((event) => <li key={event.id}><button className="text-button" onClick={() => selectThread(event.threadId)}><strong>{event.buyerName}</strong> · {readable(event.action)}</button>{event.reasons[0] && <span>{readable(event.reasons[0])}</span>}</li>)}</ul></details>}
+            {briefOpen && <div className="brief-content" id="opening-summary">
+              <p className="brief-summary">In this period: {brief.counts.resolved} conversations resolved · {brief.counts.failed} failed sends · {brief.counts.escalated} escalations. At opening: {brief.counts.needsReview} need review · {brief.counts.approvalRequired} need approval.</p>
+              {brief.events.length === 0 && brief.orderUpdates.length === 0 ? <p className="brief-summary">No recorded activity to show for this period.</p> : <div className="brief-events"><ul>{[...brief.orderUpdates, ...brief.events].slice(0, 12).map((event) => <li key={event.id}><button className="text-button" onClick={() => selectThread(event.threadId)}><strong>{event.buyerName}</strong> · {readable(event.action)}</button><time dateTime={event.createdAt}>{dateLabel(event.createdAt, true)}</time>{event.reasons[0] && <span>{readable(event.reasons[0])}</span>}</li>)}</ul></div>}
               {brief.counts.needsReview + brief.counts.approvalRequired > 0 && <button className="button secondary" onClick={() => { setFilter("needs-you"); const first = queue.status === "ready" ? queue.threads.find(needsSeller) : null; if (first) selectThread(first.id); setBriefOpen(false); }}>Review conversations <Icon name="chevron" size={14} /></button>}
             </div>}
           </section>}

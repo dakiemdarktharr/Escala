@@ -29,6 +29,8 @@ No `OPENAI_API_KEY` means no live generation. The notice names that missing vari
 
 One route, `POST /api/threads/:threadId/replies`, handles all reply modes and retries. It checks final edited text, current threshold, proposal ownership/status/version, conversation revision, evidence fingerprint, exact proposal hash, automatic eligibility and exact sensitive-action approval. Approval must include `approvedText` equal to the trimmed final reply and current `contextRevision`. New buyer context, changed evidence, consumed proposals and text edits cannot reuse old approval. Seller approval of a communication executes no refund/cancellation or marketplace operation.
 
+The simplified UI collects sensitive approval in a confirmation dialog rather than a permanent checkbox. The dialog displays the exact final text and retains its context snapshot; changing text or relevant conversation state invalidates confirmation. This is a presentation change: the same final server policy and `sellerApproved` / `approvedText` / `contextRevision` contract remain authoritative. Keyboard sending uses the same confirmation flow.
+
 Every request has a client request ID. A retry returns the existing message; reuse for different content is rejected. Sending a suggestion consumes its pending state atomically, so duplicate sends/declined/obsolete suggestions are blocked. Manual replies remain available after a suggestion is consumed. The existing decision route records decline or explicit handoff decisions; historical approve/edit decisions no longer imply a delivery.
 
 ## Persistence and audit

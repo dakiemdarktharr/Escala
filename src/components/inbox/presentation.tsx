@@ -14,22 +14,52 @@ export const actionLabels: Record<RecommendationAction, string> = {
 };
 
 export const conversationLabels = {
-  AWAITING_PROCESSING: "Awaiting Escala",
-  AUTO_HANDLED: "Auto handled",
-  WAITING_FOR_BUYER: "Waiting for buyer",
-  WAITING_FOR_SELLER_REVIEW: "Needs review",
+  AWAITING_PROCESSING: "Needs reply",
+  AUTO_HANDLED: "Handled",
+  WAITING_FOR_BUYER: "Waiting for customer",
+  WAITING_FOR_SELLER_REVIEW: "Needs reply",
   APPROVAL_REQUIRED: "Needs approval",
-  RESOLVED: "Resolved",
-  ESCALATED: "Escalated",
-  SEND_FAILED: "Send failed",
+  RESOLVED: "Handled",
+  ESCALATED: "Needs reply",
+  SEND_FAILED: "Needs reply",
 };
+export function conversationLabel(thread: InboxThreadSummary) {
+  return thread.conversationState ? conversationLabels[thread.conversationState] : "Needs reply";
+}
+export function requestLabel(intent: string) {
+  const labels: Record<string, string> = {
+    refund: "Refund", payment_dispute_and_refund: "Payment issue", cancellation: "Cancellation",
+    wrong_item: "Wrong item", damaged_item: "Damaged item", order_status: "Order status",
+    delivery_complaint: "Delivery issue", return_or_exchange: "Return or exchange",
+    positive_feedback: "Feedback", product_information: "Product question", stock_check: "Availability",
+    product_and_shipping_faq: "Product and delivery", unknown: "Customer request",
+  };
+  return labels[intent] ?? "Customer request";
+}
+export function requestSummary(intent: string) {
+  const summaries: Record<string, string> = {
+    refund: "The customer is asking about a refund.",
+    payment_dispute_and_refund: "The customer needs help with a payment issue.",
+    cancellation: "The customer wants to cancel the order.",
+    wrong_item: "The customer says they received the wrong item.",
+    damaged_item: "The customer says the item arrived damaged.",
+    order_status: "The customer wants an update on their order.",
+    delivery_complaint: "The customer needs help with a delivery.",
+    return_or_exchange: "The customer is asking about a return or exchange.",
+    positive_feedback: "The customer shared feedback on their purchase.",
+    product_information: "The customer has a product question.",
+    stock_check: "The customer wants to check availability.",
+    product_and_shipping_faq: "The customer is asking about product and delivery details.",
+  };
+  return summaries[intent] ?? "Review the customer’s message before replying.";
+}
 export function needsSeller(thread: InboxThreadSummary) {
   return thread.conversationState
     ? ["AWAITING_PROCESSING", "WAITING_FOR_SELLER_REVIEW", "APPROVAL_REQUIRED", "ESCALATED", "SEND_FAILED"].includes(thread.conversationState)
     : thread.requiresAction === true;
 }
 export function autoHandled(thread: InboxThreadSummary) {
-  return thread.conversationState === "AUTO_HANDLED" || (thread.conversationState === "WAITING_FOR_BUYER" && thread.autonomyDecision === "AUTO_SEND");
+  return ["AUTO_HANDLED", "WAITING_FOR_BUYER", "RESOLVED"].includes(thread.conversationState ?? "");
 }
 
 export function readable(value: string) {

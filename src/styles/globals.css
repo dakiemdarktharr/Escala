@@ -387,3 +387,75 @@ input::placeholder, textarea::placeholder { color: var(--muted-on-secondary); }
   .conversation-actions { padding-inline: 12px; gap: 13px; } .handled-summary { padding: 18px 12px; flex-wrap: wrap; } .handled-summary .text-button { margin-left: 32px; }
 }
 @media (max-height: 700px) { .seller-brief { max-height: 20dvh; padding-block: 9px; } .thread-header { padding-block: 10px; } .draft-editor textarea { min-height: 58px; } .copilot-scroll { max-height: 20dvh; } }
+/* Simple inbox: the conversation and the next action carry the hierarchy. */
+.demo-disclosure { position: relative; font-size: 11px; color: var(--muted); }
+.demo-disclosure > summary { display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; white-space: nowrap; padding: 6px 0; }
+.demo-disclosure > summary::-webkit-details-marker { display: none; }
+.demo-details { position: absolute; right: 0; top: calc(100% + 8px); width: min(310px, calc(100vw - 28px)); z-index: 10; background: var(--surface); color: var(--muted); padding: 18px; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); line-height: 1.7; }
+.demo-details strong { color: var(--ink); }
+.demo-details p { margin: 8px 0; }
+.demo-details .text-button { margin-top: 5px; color: var(--ink); }
+.brief-story { min-width: 0; }
+.brief-heading .brief-narrative { color: var(--ink); font-size: 12px; margin-top: 4px; }
+.brief-backlog { display: inline; }
+.brief-content { align-items: flex-start; }
+.brief-events { width: 100%; }
+.brief-events time { font-size: 10px; }
+.seller-brief.is-open { max-height: 32dvh; }
+.status-AUTO_HANDLED, .status-WAITING_FOR_BUYER, .status-RESOLVED { color: var(--muted); }
+.status-WAITING_FOR_SELLER_REVIEW, .status-AWAITING_PROCESSING, .status-SEND_FAILED, .status-ESCALATED { color: var(--info-text); }
+.priority-note { display: inline-flex; align-items: center; gap: 3px; }
+.thread-identity > span { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.thread-identity .conversation-status { font-size: 11px; }
+.thread-identity .conversation-status::before { display: none; }
+.analysis-toggle { flex-shrink: 0; }
+.thread-scroll { padding-inline: clamp(20px, 4vw, 64px); }
+.message { max-width: min(82%, 650px); }
+.message-bubble { font-size: 14px; }
+.reply-dock { max-height: 55%; overflow-y: auto; overscroll-behavior: contain; padding: 6px clamp(0px, 2vw, 40px) 0; }
+.recommendation-card { padding-top: 12px; }
+.recommendation-card h3 { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 650; }
+.recommendation-card h3 svg { color: var(--accent); }
+.draft-reason { font-size: 12px; margin-top: 5px; }
+.reply-composer { padding-top: 10px; }
+.editor-label { font-size: 11px; }
+.draft-editor:not(.is-editing) { padding: 12px 15px; background: var(--surface-secondary); border-radius: 10px; }
+.suggested-reply { font-size: 14px; line-height: 1.65; margin: 0; }
+.draft-editor textarea { font-size: 14px; min-height: 96px; }
+.composer-footer { margin-top: 12px; gap: 10px; }
+.composer-footer p { font-size: 10px; }
+.composer-footer .button { flex-shrink: 0; }
+.conversation-options { margin: 2px 22px 12px; color: var(--muted); font-size: 11px; }
+.conversation-options > summary { width: fit-content; cursor: pointer; padding: 4px 0; }
+.conversation-actions { padding: 9px 0 0; flex-wrap: wrap; gap: 8px 16px; }
+.conversation-actions .text-button { font-size: 11px; }
+.manual-reply-action { display: flex; align-items: center; gap: 16px; padding: 16px 22px; }
+.handled-summary { align-items: flex-start; }
+.handled-summary > div { flex: 1; min-width: 0; }
+.handled-summary strong { font-size: 14px; }
+.handled-summary p { font-size: 12px; }
+.handled-summary .text-button { flex-shrink: 0; }
+.drawer-center { inset: 0; margin: auto; width: min(560px, calc(100% - 32px)); height: fit-content; max-height: 85dvh; border-radius: 16px; overflow-y: auto; }
+.drawer-center .drawer-inner { height: auto; }
+.drawer-center .drawer-heading { border: 0; padding: 22px 24px 12px; }
+.approval-confirmation { padding: 0 24px 24px; font-size: 13px; line-height: 1.7; }
+.approval-confirmation > p { color: var(--muted); }
+.confirmation-reply { margin: 18px 0; padding: 15px; background: var(--surface-secondary); border-radius: 10px; overflow-wrap: anywhere; }
+.confirmation-reply > span { font-size: 11px; color: var(--muted); }
+.confirmation-reply > p { margin-top: 6px; white-space: pre-wrap; }
+.confirmation-context { font-size: 11px; }
+.confirmation-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+@media (max-width: 599px) {
+  .topbar { padding-inline: 10px; gap: 5px; } .topbar-actions { gap: 7px; }
+  .brand { font-size: 0; gap: 0; } .brand-mark { font-size: 24px; } .brand-period { display: none; }
+  .demo-disclosure { font-size: 10px; } .demo-disclosure .environment-dot { display: none; }
+  .brief-heading .brief-narrative { font-size: 11px; } .brief-backlog { display: block; }
+  .brief-heading > .text-button { align-self: flex-start; } .brief-story { flex: 1; }
+  .thread-identity .conversation-status { font-size: 10px; }
+  .thread-scroll { padding: 18px 14px; } .message-bubble { font-size: 13px; }
+  .reply-dock { padding-inline: 0; max-height: 58%; } .recommendation-card h3 { font-size: 13px; }
+  .suggested-reply, .draft-editor textarea { font-size: 13px; } .draft-editor textarea { min-height: 84px; }
+  .conversation-options { margin-inline: 12px; } .manual-reply-action { padding-inline: 12px; }
+  .handled-summary .text-button { margin-left: 32px; } .handled-summary strong { font-size: 13px; }
+  .drawer-center .drawer-heading { padding: 16px 18px 10px; } .approval-confirmation { padding: 0 18px 18px; }
+}

@@ -10,7 +10,7 @@ import {
   LoadingState,
   needsSeller,
   autoHandled,
-  conversationLabels,
+  conversationLabel,
 } from "./presentation";
 
 export type QueueState =
@@ -65,7 +65,7 @@ export function ConversationQueue({
     <div className="queue">
       <div className="queue-heading">
         <h2>
-          Attention inbox <span>{threads.length}</span>
+          Inbox <span>{threads.length}</span>
         </h2>
         <button
           className="icon-button"
@@ -98,8 +98,8 @@ export function ConversationQueue({
         >
           {(
             [
-              ["needs-you", "Needs you"],
-              ["auto-handled", "Auto handled"],
+              ["needs-you", "Needs attention"],
+              ["auto-handled", "Handled"],
               ["all", "All"],
             ] as const
           ).map(([value, label]) => (
@@ -128,7 +128,6 @@ export function ConversationQueue({
           : state.status === "loading"
             ? "Opening your inbox"
             : "Connection needs attention"}
-        <span>Prioritized</span>
       </div>
       <div className="queue-scroll">
         {state.status === "loading" ? (
@@ -205,8 +204,8 @@ export function ConversationQueue({
                   </div>
                   <p className="case-preview">{thread.preview}</p>
                   <div className="case-tags">
-                    <span className={`conversation-status status-${thread.conversationState ?? "unknown"}`}>{thread.conversationState ? conversationLabels[thread.conversationState] : thread.requiresAction ? "Needs review" : "Conversation"}</span>
-                    {thread.urgency === "high" && <span className="priority-note" title="Urgency is separate from reply risk">High priority</span>}
+                    <span className={`conversation-status status-${thread.conversationState ?? "unknown"}`}>{conversationLabel(thread)}</span>
+                    {thread.urgency === "high" && <span className="priority-note" title={thread.urgencyReasons.join(" · ")}><Icon name="clock" size={11} /> Time sensitive</span>}
                   </div>
                   </div>
                 </button>
@@ -214,10 +213,6 @@ export function ConversationQueue({
             ))}
           </ul>
         )}
-      </div>
-      <div className="queue-footer">
-        <Icon name="shield" size={14} />
-        <span>Routine replies handled. You stay in control.</span>
       </div>
     </div>
   );

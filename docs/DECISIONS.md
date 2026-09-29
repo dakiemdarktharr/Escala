@@ -172,3 +172,23 @@ No second frontend/API stack, database system, sentiment model, package dependen
 Original baseline: 60 passed. Final expanded suite on 2026-09-29: **84 passed, zero failures or skips**. It includes all 14 requested autonomy cases plus classifier failures, stale/expired evidence, seller dispositions, generation failure and pause/new-buyer races. Real MongoDB replica set, Next production HTTP, actual Responses SDK and reusable CLI worker are exercised. Lint, type checks, production build and demo validation passed. Browser checks verified persisted automatic tracking, prepared/held drafts, approval invalidation, paused inference, Draft only, brief facts and context collapse. Clean light/dark captures at 1280×720 confirmed no horizontal overflow; final preview mode is DRAFT_ONLY. The generator is a clearly labeled local protocol fixture, not live AI. No external delivery or order state mutation. Exact commands and remaining limits are recorded in README.
 
 Model SHA256 values are unchanged: source fe9f3a0ce17660e048ada03c4db1f26063e9ff6ff8f6657d16df5230a8993dba; ONNX a532971e33c196e4298c0a262553071f1e96ecd879f8c97c18e9b78fe4460aa1. No training or Vietnamese model replacement.
+
+## 2026-09-29 — simplify the seller-facing inbox
+
+### Existing files modified
+
+| File | Change |
+| --- | --- |
+| `src/components/inbox/conversation-queue.tsx` | Inbox, Needs attention / Handled / All; one primary status and optional temporal urgency |
+| `src/components/inbox/presentation.tsx` | Friendly status/request wording; Handled includes replied/waiting/resolved work |
+| `src/components/inbox/inbox-workspace.tsx` | Compact Demo disclosure and brief narrative; detailed summary remains optional; persisted mode/acknowledgement retained |
+| `src/components/inbox/thread-workspace.tsx` | Simple header, one reply/action area, inline editing, closed analysis, exact-context confirmation instead of checkbox, handled/manual states |
+| `src/components/inbox/recommendation-panel.tsx` | Short understanding/action heading; redundant metrics/options removed from primary flow |
+| `src/components/inbox/context-panel.tsx` | Technical state, original proposal, evidence, source, policy and audit preserved in analysis |
+| `src/components/ui/drawer.tsx` | Centered native-dialog variant reuses existing focus/Escape/inert behavior for confirmation |
+| `src/styles/globals.css` | Existing theme tokens; simpler spacing, disclosure, confirmation and responsive layout |
+| `README.md`, `docs/ARCHITECTURE.md`, `docs/POLICY.md`, `docs/DECISIONS.md` | Current presentation, approval semantics, file map and exact verification |
+
+No new files or packages. No backend, API, persistence, shared-contract, trained checkpoint, Vietnamese rule, policy or transport changes. Friendly labels do not grant permissions. Existing exact-text/revision send checks still reject unsafe/stale approval. The UI additionally fingerprints the displayed recommendation, relevant state and evidence; it closes confirmation when polling reports changes. Sensitive confirmation still uses the existing reply endpoint and approval fields. Ctrl+Enter follows that same flow. Editing preserves text; new context requires explicit re-review before retained text can be sent.
+
+Full suite: **84 passed, zero failures or skips**; lint/typecheck/production build passed. Actual browser verified all requested filters and approval/edit/stale/manual/handled/analysis/brief/theme/mode flows. An explicitly approved edited reply was persisted with exact text/revision, simulated delivery and audit across restart. Safe Vietnamese acknowledgement auto-sent in ON while cancellation stayed held. PAUSED left ingress unprocessed; DRAFT_ONLY subsequently prepared without sending. CSS 1280×800, 900×650, 390×600 had no document horizontal overflow; mobile confirmation buttons fit. Viewport reset; final mode DRAFT_ONLY and original dark preference restored. Local test fixture generation is not live AI. Saved screenshots have in-app capture artifacts; clean target-device visual sign-off and first-time comprehension testing remain outstanding.
