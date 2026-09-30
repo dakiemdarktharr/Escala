@@ -85,7 +85,7 @@ function fixtures(): ThreadDetailResponse[] {
       ].includes(message.scenario);
       const thread: InboxThreadSummary = {
         id: message.threadId,
-        buyerName: sampleNames[index],
+        buyerName: sampleNames[index] ?? `Buyer ${index + 1}`,
         preview: message.text,
         updatedAt: receivedAt,
         unread: true,
