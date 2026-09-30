@@ -6,9 +6,13 @@ Escala is a seller-support MVP for marketplace operations. It turns buyer messag
 
 The MVP includes a responsive seller inbox, synthetic support scenarios and knowledge-base data, a MongoDB persistence layer, an OpenAI Responses integration, deterministic risk policy, and seller decision audit records. External message sending and order mutation remain disabled. The smaller deterministic engine prototype and its contract tests from the repository's earlier work are preserved separately at `src/determination-engine.js`.
 
+## Live demo
+
+[Open Escala on Vercel](https://escala-32ce3m3py-acne-a6cd.vercel.app) — this production deployment may require Vercel authentication or project access.
+
 Development now uses this cloned Escala repository. The authorized Shop Signal migration integrates its local English checkpoint and Vietnamese triage into Escala's existing server, contracts, MongoDB thread records, and inbox components. There is one Next.js app and one database system (MongoDB). No old SQLite database or FastAPI service is used.
 
-Autonomous inbox implementation verified on 2026-09-29 against the existing 60-test baseline; the expanded suite passed all 84 tests. See the current verification section below for the expanded checks. The API test verifies persisted seller replies, recommendations and audit records across an app restart and runs the cached-analysis refresh command. Atlas connectivity, live OpenAI generation, and Vercel deployment were not verified in this clone; no credentials were copied from the old project.
+Autonomous inbox implementation verified on 2026-09-29 against the existing 60-test baseline; the expanded suite passed all 84 tests. See the current verification section below for the expanded checks. The API test verifies persisted seller replies, recommendations and audit records across an app restart and runs the cached-analysis refresh command. Atlas connectivity and live OpenAI generation were not verified in this clone. The current Vercel production deployment is linked below, but its access gate prevented public app-page verification. No credentials were copied from the old project.
 
 ## Run locally
 
