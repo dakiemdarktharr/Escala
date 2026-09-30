@@ -459,3 +459,67 @@ input::placeholder, textarea::placeholder { color: var(--muted-on-secondary); }
   .handled-summary .text-button { margin-left: 32px; } .handled-summary strong { font-size: 13px; }
   .drawer-center .drawer-heading { padding: 16px 18px 10px; } .approval-confirmation { padding: 0 18px 18px; }
 }
+
+/* Vietnamese labels remain legible across themes and compact viewports. */
+.mode-help {
+  display: flex; align-items: flex-start; gap: 7px; flex: 0 0 auto;
+  padding: 8px 24px; background: var(--surface-secondary); color: var(--muted-on-secondary);
+  border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.5;
+}
+.mode-help svg, .simulation-note svg { margin-top: 2px; }
+.simulation-note { display: flex; align-items: flex-start; gap: 6px; color: var(--muted); font-size: 12px; margin: 5px 22px 0; }
+.conversation-status, .priority-note, .editor-label, .composer-footer p,
+.brief-heading p, .brief-summary, .context-footnote, .automatic-attribution { font-size: 12px; }
+.status-SEND_FAILED, .status-ESCALATED { color: var(--danger-text); }
+.status-AWAITING_PROCESSING { color: var(--muted); }
+.status-WAITING_FOR_SELLER_REVIEW { color: var(--info-text); }
+.status-APPROVAL_REQUIRED { color: var(--warning-text); }
+.suggested-reply, .message-bubble p { overflow-wrap: anywhere; white-space: pre-wrap; }
+.composer-footer { position: sticky; bottom: 0; background: var(--surface); padding-block: 10px; z-index: 1; flex-wrap: wrap; }
+.composer-footer p { flex: 1 1 180px; }
+.demo-disclosure summary, .autonomy-control select, .theme-picker select { min-height: 40px; }
+@media (max-width: 899px) {
+  .topbar { gap: 10px; padding-inline: 14px; }
+  .topbar-actions { min-width: 0; }
+  .mode-help { padding-inline: 14px; }
+  .conversation-status { font-size: 12px; }
+  .icon-button, .filter-tabs button, .text-button { min-height: 40px; }
+}
+@media (max-width: 599px) {
+  .topbar { height: auto; min-height: 52px; flex: 0 0 auto; flex-wrap: wrap; padding: 8px 12px; gap: 6px 10px; }
+  .brand { font-size: 19px; gap: 6px; }
+  .workspace-label { display: block; font-size: 14px; }
+  .topbar-actions { width: 100%; margin-left: 0; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; }
+  .autonomy-control select { max-width: none; font-size: 12px; }
+  .theme-picker select { max-width: 100px; font-size: 12px; }
+  .demo-disclosure { font-size: 12px; }
+  .mode-help { padding: 6px 12px; font-size: 12px; }
+  .seller-brief { max-height: 18dvh; }
+  .brief-heading p, .brief-heading .brief-narrative, .brief-summary { font-size: 12px; }
+  .brief-heading > .text-button { font-size: 12px; }
+  .thread-header { flex-wrap: wrap; gap: 7px; }
+  .thread-identity { flex: 1; min-width: 0; }
+  .thread-identity .conversation-status { font-size: 12px; }
+  .analysis-toggle { font-size: 12px; }
+  .message { max-width: 92%; }
+  .message-bubble, .suggested-reply { font-size: 14px; }
+  .simulation-note { margin-inline: 12px; }
+  .reply-dock { max-height: 60%; padding-bottom: env(safe-area-inset-bottom); }
+  .draft-editor textarea { font-size: 16px; min-height: 96px; }
+  .composer-footer { gap: 6px; }
+  .composer-footer p { flex-basis: 100%; font-size: 12px; }
+  .composer-footer .button { width: 100%; min-height: 44px; }
+  .confirmation-actions { flex-wrap: wrap; }
+  .confirmation-actions .button { flex: 1 1 160px; min-height: 44px; }
+  .manual-reply-action { flex-wrap: wrap; gap: 8px; }
+  .conversation-actions .text-button { font-size: 12px; min-height: 44px; }
+}
+@media (max-width: 599px) and (max-height: 600px) {
+  .seller-brief { display: none; }
+  .topbar { padding-block: 4px; }
+  .mode-help { padding-block: 3px; }
+}
+
+/* Explain urgency in the row itself, including touch-only screens. */
+.case-tags .priority-note { flex-basis: 100%; align-items: flex-start; white-space: normal; line-height: 1.5; overflow-wrap: anywhere; }
+.case-tags .priority-note > svg { margin-top: 3px; }

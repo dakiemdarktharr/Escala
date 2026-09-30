@@ -45,7 +45,7 @@ export function Drawer({
           <button
             className="icon-button"
             onClick={onClose}
-            aria-label={`Close ${title.toLowerCase()}`}
+            aria-label={`Đóng ${title.toLowerCase()}`}
             autoFocus
           >
             <Icon name="close" />

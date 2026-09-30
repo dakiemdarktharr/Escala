@@ -11,6 +11,7 @@ import {
   needsSeller,
   autoHandled,
   conversationLabel,
+  readable,
 } from "./presentation";
 
 export type QueueState =
@@ -65,20 +66,20 @@ export function ConversationQueue({
     <div className="queue">
       <div className="queue-heading">
         <h2>
-          Inbox <span>{threads.length}</span>
+          Hộp thư <span>{threads.length}</span>
         </h2>
         <button
           className="icon-button"
           onClick={onRetry}
           disabled={refreshing || state.status === "loading"}
-          aria-label="Refresh inbox"
+          aria-label="Làm mới hộp thư"
         >
           <Icon name="refresh" size={17} className={refreshing ? "spin" : ""} />
         </button>
       </div>
       <div className="queue-tools">
         <label htmlFor={searchId} className="sr-only">
-          Search conversations
+          Tìm hội thoại
         </label>
         <div className="search-field">
           <Icon name="search" size={18} />
@@ -87,20 +88,20 @@ export function ConversationQueue({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search conversations"
+            placeholder="Tìm hội thoại"
             autoComplete="off"
           />
         </div>
         <div
           className="filter-tabs"
           role="group"
-          aria-label="Filter conversations"
+          aria-label="Lọc hội thoại"
         >
           {(
             [
-              ["needs-you", "Needs attention"],
-              ["auto-handled", "Handled"],
-              ["all", "All"],
+              ["needs-you", "Cần xử lý"],
+              ["auto-handled", "Đã xử lý"],
+              ["all", "Tất cả"],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -124,10 +125,10 @@ export function ConversationQueue({
       </div>
       <div className="queue-results" aria-live="polite">
         {state.status === "ready"
-          ? `${matches.length} ${matches.length === 1 ? "conversation" : "conversations"}${query ? " found" : ""}`
+          ? `${matches.length} hội thoại${query ? " phù hợp" : ""}`
           : state.status === "loading"
-            ? "Opening your inbox"
-            : "Connection needs attention"}
+            ? "Đang mở hộp thư"
+            : "Cần kiểm tra kết nối"}
       </div>
       <div className="queue-scroll">
         {state.status === "loading" ? (
@@ -135,15 +136,15 @@ export function ConversationQueue({
         ) : state.status === "error" ? (
           <EmptyState
             icon="alert"
-            title="Inbox unavailable"
+            title="Chưa tải được hộp thư"
             action={
               <div className="empty-actions">
                 <button className="button secondary" onClick={onRetry}>
-                  Try again
+                  Thử lại
                 </button>
                 {onPreview && (
                   <button className="text-button" onClick={onPreview}>
-                    Explore sample inbox
+                    Khám phá hộp thư mẫu
                   </button>
                 )}
               </div>
@@ -156,8 +157,8 @@ export function ConversationQueue({
             icon="search"
             title={
               threads.length === 0
-                ? "Your inbox is clear"
-                : "No conversations found"
+                ? "Hộp thư chưa có tin nhắn"
+                : "Không tìm thấy hội thoại"
             }
             action={
               threads.length > 0 ? (
@@ -168,17 +169,17 @@ export function ConversationQueue({
                     setFilter("all");
                   }}
                 >
-                  Clear search and filters
+                  Xóa tìm kiếm và bộ lọc
                 </button>
               ) : undefined
             }
           >
             {threads.length === 0
-              ? "Conversations will appear here when the workspace has messages to review."
-              : "Try another name, order number, or message, or clear the filters."}
+              ? "Hội thoại sẽ xuất hiện khi có tin nhắn cần xử lý."
+              : "Thử tìm theo tên, mã đơn hoặc nội dung khác; hoặc xóa bộ lọc."}
           </EmptyState>
         ) : (
-          <ul className="conversation-list" aria-label="Conversations">
+          <ul className="conversation-list" aria-label="Hội thoại">
             {matches.map((thread) => (
               <li key={thread.id}>
                 <button
@@ -192,20 +193,27 @@ export function ConversationQueue({
                     <span className="case-name">{thread.buyerName}</span>
                     <time
                       dateTime={thread.updatedAt}
-                      title={`Last activity: ${dateLabel(thread.updatedAt, true)}`}
+                      title={`Hoạt động gần nhất: ${dateLabel(thread.updatedAt, true)}`}
                     >
                       {dateLabel(thread.updatedAt)}
                     </time>
                     {thread.unread && (
                       <span className="unread-dot">
-                        <span className="sr-only">Unread</span>
+                        <span className="sr-only">Chưa đọc</span>
                       </span>
                     )}
                   </div>
                   <p className="case-preview">{thread.preview}</p>
                   <div className="case-tags">
                     <span className={`conversation-status status-${thread.conversationState ?? "unknown"}`}>{conversationLabel(thread)}</span>
-                    {thread.urgency === "high" && <span className="priority-note" title={thread.urgencyReasons.join(" · ")}><Icon name="clock" size={11} /> Time sensitive</span>}
+                    {thread.urgency !== "low" && (
+                      <span className="priority-note">
+                        <Icon name="clock" size={12} />
+                        <span>{thread.urgencyReasons.length
+                          ? thread.urgencyReasons.map(readable).join(" · ")
+                          : "Cần kiểm tra thời hạn của yêu cầu"}</span>
+                      </span>
+                    )}
                   </div>
                   </div>
                 </button>

@@ -6,13 +6,12 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <span className="brand-mark" aria-hidden="true">
         e
       </span>
-      <h1>The workspace couldn’t load.</h1>
+      <h1>Chưa tải được không gian làm việc.</h1>
       <p>
-        Your saved decisions are kept on the server. Try opening the workspace
-        again.
+        Thử mở lại không gian làm việc. Dữ liệu bản xem thử có thể mất khi tải lại.
       </p>
       <button className="button primary" onClick={reset}>
-        Try again
+        Thử lại
       </button>
     </main>
   );

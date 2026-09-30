@@ -29,19 +29,19 @@ export function ContextPanel({
     <div className="context-panel">
       <div className="context-title">
         <Icon name="book" size={18} />
-        <h2>Conversation context</h2>
-        {onClose && <button className="icon-button context-close" onClick={onClose} aria-label="Collapse context"><Icon name="close" size={15} /></button>}
+        <h2>Ngữ cảnh hội thoại</h2>
+        {onClose && <button className="icon-button context-close" onClick={onClose} aria-label="Thu gọn ngữ cảnh"><Icon name="close" size={15} /></button>}
       </div>
       <div
         className="context-tabs"
         role="tablist"
-        aria-label="Conversation context"
+        aria-label="Ngữ cảnh hội thoại"
       >
         {(
           [
-            ["analysis", "Overview"],
-            ["evidence", "Evidence"],
-            ["activity", "Activity"],
+            ["analysis", "Tổng quan"],
+            ["evidence", "Nguồn"],
+            ["activity", "Hoạt động"],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -83,28 +83,33 @@ export function ContextPanel({
       >
         {tab === "analysis" ? (
           <>
-            {detail.thread.conversationState && <section className="context-section"><div className="section-title"><Icon name="shield" size={17} /><h3>{readable(detail.thread.conversationState)}</h3></div>{detail.thread.stateReasons?.map((reason, index) => <p className="context-explanation" key={index}>{readable(reason)}</p>)}</section>}
+            {detail.thread.conversationState && <section className="context-section"><div className="section-title"><Icon name="shield" size={17} /><h3>{readable(detail.thread.conversationState)}</h3></div>{detail.thread.stateReasons?.[0] && <p className="context-explanation">{readable(detail.thread.stateReasons[0])}</p>}{(detail.thread.stateReasons?.length ?? 0) > 1 && <details className="audit-details"><summary>Chi tiết</summary><ul>{detail.thread.stateReasons?.slice(1).map((reason, index) => <li key={index}>{readable(reason)}</li>)}</ul></details>}</section>}
             <section className="context-section">
-              <div className="section-title"><Icon name="spark" size={17} /><h3>Buyer message analysis</h3></div>
-              <p className="context-explanation">Intent: {readable(detail.thread.intent)}</p>
+              <div className="section-title"><Icon name="spark" size={17} /><h3>Phân tích tin nhắn khách</h3></div>
+              <p className="context-explanation">Yêu cầu: {readable(detail.thread.intent)}</p>
               <TriageSignals thread={detail.thread} sample={sample} />
             </section>
             {detail.recommendation && <section className="context-section">
-              <div className="section-title"><Icon name="shield" size={17} /><h3>Reply policy & confidence</h3></div>
+              <div className="section-title"><Icon name="shield" size={17} /><h3>Gợi ý xử lý</h3></div>
               <LevelBadge kind="risk" level={detail.recommendation.risk} />
               <dl className="analysis-facts">
-                <div><dt>Next step</dt><dd>{detail.recommendation.recommendedStep || "Review buyer request"}</dd></div>
-                <div><dt>Policy decision</dt><dd>{detail.recommendation.deliveryState === "AUTO_SEND" ? "Eligible for automatic reply" : readable(detail.recommendation.deliveryState || "REVIEW_REQUIRED")}</dd></div>
-                <div><dt>Confidence</dt><dd>{detail.recommendation.confidence !== null && Number.isFinite(detail.recommendation.confidence) ? `${Math.round(detail.recommendation.confidence * 100)}%` : "Unavailable"}</dd></div>
-                {Number.isFinite(detail.recommendation.confidenceThreshold) && <div><dt>Auto-send threshold</dt><dd>{Math.round(detail.recommendation.confidenceThreshold * 100)}%</dd></div>}
-                <div><dt>Draft source</dt><dd>{sample ? "Sample template" : detail.recommendation.generationProvider === "test_stub" ? "Local test candidate" : detail.recommendation.draftSource === "openai" ? "OpenAI generated" : detail.recommendation.draftSource === "template" ? "Reviewed template fallback" : "Unavailable"}</dd></div>
-                <div><dt>Policy</dt><dd>{detail.recommendation.policyVersion}</dd></div>
+                <div><dt>Bước tiếp theo</dt><dd>{readable(detail.recommendation.recommendedStep || "Kiểm tra yêu cầu của khách")}</dd></div>
+                <div><dt>Quyết định theo quy tắc</dt><dd>{detail.recommendation.deliveryState === "AUTO_SEND" ? "Đủ điều kiện tự động (mô phỏng)" : readable(detail.recommendation.deliveryState || "REVIEW_REQUIRED")}</dd></div>
               </dl>
-              <p className="context-footnote">The backend autonomy mode governs whether an eligible reply is sent. Risk approval is independent of confidence. Delivery is simulated; no marketplace or order action is performed.</p>
-              <details className="audit-details" open><summary>Decision reasons</summary><ul>{detail.recommendation.reasons.map((reason, index) => <li key={index}>{readable(reason)}</li>)}</ul></details>
-              {detail.recommendation.draft && <details className="audit-details"><summary>Original suggested reply</summary><p>{detail.recommendation.draft}</p></details>}
-              {detail.recommendation.generationProvider === "test_stub" && <p className="context-footnote">Generated by a local test fixture. No live AI was used for this reply.</p>}
-              {detail.recommendation.modelStatus === "fallback" && <details className="audit-details"><summary>Drafting availability</summary><p>{detail.recommendation.modelNotice || "Live OpenAI drafting is unavailable. Manual replies remain available."}</p></details>}
+              {detail.recommendation.reasons[0] && <p className="context-explanation">{readable(detail.recommendation.reasons[0])}</p>}
+              <details className="audit-details"><summary>Chi tiết</summary>
+              <dl className="analysis-facts">
+                <div><dt>Độ tin cậy</dt><dd>{detail.recommendation.confidence !== null && Number.isFinite(detail.recommendation.confidence) ? `${Math.round(detail.recommendation.confidence * 100)}%` : "Chưa có"}</dd></div>
+                {Number.isFinite(detail.recommendation.confidenceThreshold) && <div><dt>Ngưỡng tự động</dt><dd>{Math.round(detail.recommendation.confidenceThreshold * 100)}%</dd></div>}
+                <div><dt>Nguồn bản nháp</dt><dd>{sample ? "Mẫu minh họa" : detail.recommendation.generationProvider === "test_stub" ? "Bản nháp kiểm thử cục bộ" : detail.recommendation.draftSource === "openai" ? "Do OpenAI tạo" : detail.recommendation.draftSource === "template" ? "Mẫu dự phòng đã duyệt" : "Chưa có"}</dd></div>
+                <div><dt>Quy tắc</dt><dd>{detail.recommendation.policyVersion}</dd></div>
+              </dl>
+              <p className="context-footnote">Chế độ xử lý quyết định việc gửi câu trả lời đủ điều kiện. Phê duyệt rủi ro độc lập với độ tin cậy. Chỉ gửi mô phỏng, không thao tác trên sàn hoặc đơn hàng.</p>
+              <details className="audit-details"><summary>Lý do quyết định</summary><ul>{detail.recommendation.reasons.map((reason, index) => <li key={index}>{readable(reason)}</li>)}</ul></details>
+              {detail.recommendation.draft && <details className="audit-details"><summary>Bản nháp đề xuất ban đầu</summary><p>{detail.recommendation.draft}</p></details>}
+              {detail.recommendation.generationProvider === "test_stub" && <p className="context-footnote">Tạo từ dữ liệu kiểm thử cục bộ, không gọi AI trực tiếp.</p>}
+              {detail.recommendation.modelStatus === "fallback" && <details className="audit-details"><summary>Tình trạng soạn nháp</summary><p>{readable(detail.recommendation.modelNotice || "Chưa có bản nháp OpenAI trực tiếp. Bạn vẫn có thể tự soạn.")}</p></details>}
+              </details>
             </section>}
           </>
         ) : tab === "evidence" ? (
@@ -112,7 +117,7 @@ export function ContextPanel({
             <section className="context-section">
               <div className="section-title">
                 <Icon name="box" size={17} />
-                <h3>Order snapshot</h3>
+                <h3>Thông tin đơn hàng</h3>
               </div>
               {detail.order ? (
                 <div className="order-card">
@@ -122,27 +127,27 @@ export function ContextPanel({
                     </span>
                     <div>
                       <strong>{detail.order.productName}</strong>
-                      <span>Quantity {detail.order.quantity}</span>
+                      <span>Số lượng {detail.order.quantity}</span>
                     </div>
                   </div>
                   <dl className="order-facts">
                     <div>
-                      <dt>Order</dt>
+                      <dt>Đơn hàng</dt>
                       <dd>#{detail.order.orderId}</dd>
                     </div>
                     <div>
-                      <dt>Status</dt>
+                      <dt>Trạng thái</dt>
                       <dd>{detail.order.status}</dd>
                     </div>
                     {detail.order.paymentStatus && (
                       <div>
-                        <dt>Payment</dt>
+                        <dt>Thanh toán</dt>
                         <dd>{detail.order.paymentStatus}</dd>
                       </div>
                     )}
                     {detail.order.deliveryDeadline && (
                       <div>
-                        <dt>Deadline</dt>
+                        <dt>Hạn giao</dt>
                         <dd>
                           {dateLabel(detail.order.deliveryDeadline, true)}
                         </dd>
@@ -151,32 +156,30 @@ export function ContextPanel({
                   </dl>
                   <p className="context-footnote">
                     {sample
-                      ? "Illustrative order for this sample."
-                      : "Workspace snapshot; no live marketplace sync."}
+                      ? "Đơn hàng minh họa cho bản xem thử."
+                      : "Thông tin đã lưu; chưa đồng bộ trực tiếp với sàn."}
                   </p>
                 </div>
               ) : (
                 <p className="context-explanation">
-                  No order is linked to this conversation. Ask for details when
-                  they’re needed.
+                  Hội thoại chưa gắn với đơn hàng. Hỏi thêm thông tin khi cần.
                 </p>
               )}
             </section>
             <section className="context-section">
               <div className="section-title">
                 <Icon name="file" size={17} />
-                <h3>Supporting knowledge</h3>
+                <h3>Nguồn tham chiếu</h3>
               </div>
               <p className="context-explanation">
-                Review the source before recording a reply.
+                Đối chiếu nguồn trước khi gửi mô phỏng câu trả lời.
               </p>
               {evidence.length === 0 ? (
                 <div className="evidence-empty">
                   <Icon name="alert" size={20} />
-                  <strong>No supporting evidence</strong>
+                  <strong>Chưa có nguồn tham chiếu</strong>
                   <p>
-                    No verified answer is available. Keep this conversation in
-                    seller review.
+                    Chưa có nguồn để xác nhận thông tin. Có thể hỏi khách bổ sung, hoặc tự kiểm tra trước khi trả lời.
                   </p>
                 </div>
               ) : (
@@ -205,9 +208,8 @@ export function ContextPanel({
               <div className="policy-note">
                 <Icon name="shield" size={17} />
                 <span>
-                  Policy {detail.recommendation.policyVersion}
-                  <br />
-                  <small>Deterministic rules govern every reply.</small>
+                  Quy tắc cố định kiểm soát mọi câu trả lời.
+                  <details className="audit-details"><summary>Chi tiết</summary><small>Phiên bản {detail.recommendation.policyVersion}</small></details>
                 </span>
               </div>
             )}
@@ -216,14 +218,14 @@ export function ContextPanel({
           <section className="context-section">
             <div className="section-title">
               <Icon name="history" size={17} />
-              <h3>Decision history</h3>
+              <h3>Lịch sử xử lý</h3>
             </div>
             <p className="context-explanation">
-              Escala actions, delivery attempts, and your decisions.
+              Thao tác Escala, các lần gửi mô phỏng và quyết định của bạn.
             </p>
             {events.length === 0 ? (
-              <EmptyState icon="history" title="No activity yet">
-                Recorded actions will appear here as the conversation progresses.
+              <EmptyState icon="history" title="Chưa có hoạt động">
+                Các thao tác được ghi lại tại đây trong quá trình xử lý.
               </EmptyState>
             ) : (
               <ol className="audit-list">
@@ -245,32 +247,32 @@ export function ContextPanel({
                       </strong>
                       <p>
                         {event.reply
-                          ? "Reply saved · simulated delivery"
-                          : event.transportState ? `Delivery ${readable(event.transportState).toLowerCase()}` : event.actor === "seller"
-                          ? "Seller decision recorded"
-                          : event.type === "inbound" ? "Buyer message received" : event.type === "autonomy" ? "Automatic policy decision" : "Workspace action recorded"}
+                          ? "Đã lưu câu trả lời · gửi mô phỏng"
+                          : event.transportState ? `Lần gửi: ${readable(event.transportState)}` : event.actor === "seller"
+                          ? "Đã ghi nhận quyết định của người bán"
+                          : event.type === "inbound" ? "Đã nhận tin nhắn khách" : event.type === "autonomy" ? "Quyết định tự động theo quy tắc" : "Đã ghi nhận thao tác"}
                       </p>
                       <time dateTime={event.createdAt}>
                         {dateLabel(event.createdAt, true)}
                       </time>
                       {(event.reply?.finalText || event.attemptedText) && <p className="audit-excerpt">“{event.reply?.finalText ?? event.attemptedText}”</p>}
-                      {event.reasonCodes[0] && <p className="audit-reason">{readable(event.reasonCodes[0])}</p>}
+
                       {event.reply && (
                         <details className="audit-details">
-                          <summary>Reply delivery & edits</summary>
-                          <p>Source: {readable(event.reply.source)} · {event.reply.edited ? "Edited by seller" : "Unedited"}</p>
-                          <p>Risk: {event.reply.risk} · {readable(event.reply.deliveryState)}</p>
-                          <p>Confidence: {event.reply.confidence === null ? "Unavailable" : `${Math.round(event.reply.confidence * 100)}%`}</p>
-                          <p>Sensitive-action approval: {event.reply.sellerApproved ? "Explicitly recorded" : event.reply.risk !== "high" ? "Not required" : "Not recorded"} · Simulated delivery</p>
-                          {event.reply.originalDraft && <p>Original draft: {event.reply.originalDraft}</p>}
-                          <p>Final reply: {event.reply.finalText}</p>
-                          {event.reply.approvedText && <p>Exact approved text: {event.reply.approvedText}</p>}
-                          {event.reply.providerMessageId && <p>Delivery reference: {event.reply.providerMessageId}</p>}
+                          <summary>Chi tiết gửi và chỉnh sửa</summary>
+                          <p>Nguồn: {readable(event.reply.source)} · {event.reply.edited ? "Người bán đã sửa" : "Chưa chỉnh sửa"}</p>
+                          <p>Rủi ro: {readable(event.reply.risk)} · {readable(event.reply.deliveryState)}</p>
+                          <p>Độ tin cậy: {event.reply.confidence === null ? "Chưa có" : `${Math.round(event.reply.confidence * 100)}%`}</p>
+                          <p>Phê duyệt nội dung nhạy cảm: {event.reply.sellerApproved ? "Đã ghi nhận rõ ràng" : event.reply.risk !== "high" ? "Không cần" : "Chưa ghi nhận"} · Gửi mô phỏng</p>
+                          {event.reply.originalDraft && <p>Bản nháp gốc: {event.reply.originalDraft}</p>}
+                          <p>Câu trả lời cuối: {event.reply.finalText}</p>
+                          {event.reply.approvedText && <p>Nội dung đã duyệt: {event.reply.approvedText}</p>}
+                          {event.reply.providerMessageId && <p>Mã lần gửi: {event.reply.providerMessageId}</p>}
                         </details>
                       )}
                       {event.reasonCodes.length > 0 && (
                         <details className="audit-details">
-                          <summary>View reasons</summary>
+                          <summary>Xem lý do</summary>
                           <ul>
                             {event.reasonCodes.map((reason, index) => (
                               <li key={`${reason}-${index}`}>
@@ -280,7 +282,7 @@ export function ContextPanel({
                           </ul>
                           {event.evidenceIds.length > 0 && (
                             <p>
-                              Evidence: {event.evidenceIds.join(", ")}
+                              Nguồn: {event.evidenceIds.join(", ")}
                             </p>
                           )}
                         </details>

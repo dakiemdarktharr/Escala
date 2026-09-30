@@ -28,7 +28,13 @@ type DetailState =
   | { status: "ready"; detail: ThreadDetailResponse }
   | { status: "error"; error: string };
 
-export interface ComposerDraft { text: string; recommendationId?: string; contextRevision?: number; seenRecommendationKey?: string }
+export interface ComposerDraft {
+  text: string;
+  recommendationId?: string;
+  contextRevision?: number;
+  seenRecommendationKey?: string;
+  pendingReply?: { signature: string; requestId: string };
+}
 type ApprovalSnapshot = { text: string; revision: number; recommendationId?: string; context: string };
 const emptyComposer: ComposerDraft = { text: "" };
 
@@ -81,7 +87,6 @@ export function ThreadWorkspace({
   const [desktopContext, setDesktopContext] = useState(false);
   const [writing, setWriting] = useState(false);
   const [approvalRequired, setApprovalRequired] = useState(false);
-  const pendingReply = useRef<{ signature: string; requestId: string } | null>(null);
   const draftKey = `${sample ? "sample" : "api"}:${id}:reply`;
   const composer = drafts[draftKey] ?? emptyComposer;
   const revision = state.status === "ready" ? state.detail.thread.contextRevision : undefined;
@@ -123,7 +128,7 @@ export function ThreadWorkspace({
     if (busy.current || !text.trim() || revision === undefined || staleDraft || consumedDraft) return;
     if (approvedSnapshot && (approvedSnapshot.text !== text.trim() || approvedSnapshot.revision !== revision || approvedSnapshot.recommendationId !== recommendationId || approvedSnapshot.context !== currentContext)) {
       setApproval(null);
-      setSaveError("The reply or conversation changed. Review it again before sending.");
+      setSaveError("Nội dung trả lời hoặc hội thoại đã thay đổi. Hãy kiểm tra lại trước khi gửi mô phỏng.");
       return;
     }
     busy.current = true;
@@ -133,13 +138,15 @@ export function ThreadWorkspace({
     setSuccess(null);
     const payload = { text: text.trim(), recommendationId, mode, contextRevision: revision, sellerApproved: Boolean(approvedSnapshot), ...(approvedSnapshot ? { approvedText: approvedSnapshot.text, contextRevision: approvedSnapshot.revision } : {}) };
     const signature = JSON.stringify(payload);
-    if (pendingReply.current?.signature !== signature) {
-      pendingReply.current = { signature, requestId: crypto.randomUUID() };
-    }
+    // Keep the attempt in InboxWorkspace's per-thread draft state so navigation
+    // after a timeout cannot assign a new id to the same retry payload.
+    const pendingReply = composer.pendingReply?.signature === signature
+      ? composer.pendingReply
+      : { signature, requestId: crypto.randomUUID() };
+    onDraftChange(draftKey, { ...composer, pendingReply });
     try {
-      const result = await client.reply(id, { ...payload, requestId: pendingReply.current.requestId });
+      const result = await client.reply(id, { ...payload, requestId: pendingReply.requestId });
       if (!mounted.current) return;
-      pendingReply.current = null;
       setState((previous) => previous.status === "ready" ? {
         status: "ready",
         detail: {
@@ -155,32 +162,32 @@ export function ThreadWorkspace({
       setApproval(null);
       setWriting(false);
       setApprovalRequired(false);
-      setSuccess("Reply sent.");
+      setSuccess(sample ? "Đã gửi mô phỏng trong phiên xem thử; tải lại sẽ mất." : "Đã lưu câu trả lời trong hội thoại demo và gửi mô phỏng. Chưa gửi đến sàn.");
       onChanged();
       try {
         const refreshed = await client.thread(id);
         if (mounted.current) setState({ status: "ready", detail: refreshed });
       } catch {
-        if (mounted.current) setSuccess("Reply saved. The latest conversation details could not be refreshed; reload to check them.");
+        if (mounted.current) setSuccess("Đã lưu câu trả lời trong hội thoại demo. Chưa tải lại được chi tiết; hãy làm mới để kiểm tra.");
       }
     } catch (error) {
       if (mounted.current) {
         setSaveError(errorMessage(error));
         if (error instanceof RequestError && error.code === "APPROVAL_REQUIRED") {
-          onDraftChange(draftKey, { ...composer, text, recommendationId, contextRevision: revision });
+          onDraftChange(draftKey, { ...composer, text, recommendationId, contextRevision: revision, pendingReply });
           setApprovalRequired(true);
           setApproval(null);
-          setSaveError("This reply needs your approval. Review it, then choose Approve & send.");
+          setSaveError("Câu trả lời này cần bạn phê duyệt. Kiểm tra nội dung rồi chọn Duyệt và gửi mô phỏng.");
           document.getElementById(composerId)?.focus();
         }
         if (error instanceof RequestError && error.code === "STALE_CONTEXT") {
           setApproval(null);
-          setSaveError("A new buyer message changed this conversation. Review the latest context before sending your retained draft.");
+          setSaveError("Có tin nhắn mới làm thay đổi ngữ cảnh. Kiểm tra hội thoại mới nhất trước khi dùng bản nháp đã giữ lại.");
           setAttempt((value) => value + 1);
         }
         if (error instanceof RequestError && error.code === "STALE_RECOMMENDATION") {
           setApproval(null);
-          setSaveError("This suggestion changed or was already sent. Refreshing the conversation; your draft is retained for review.");
+          setSaveError("Đề xuất đã thay đổi hoặc đã gửi mô phỏng. Đang tải lại hội thoại; bản nháp được giữ để bạn kiểm tra.");
           setAttempt((value) => value + 1);
         }
       }
@@ -206,7 +213,7 @@ export function ThreadWorkspace({
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
           if (initial) setState({ status: "error", error: errorMessage(error) });
-          else setSaveError(`Conversation refresh failed. ${errorMessage(error)}`);
+          else setSaveError(`Chưa làm mới được hội thoại. ${errorMessage(error)}`);
         }
       });
     };
@@ -276,6 +283,7 @@ export function ThreadWorkspace({
         if (input.decision === "decline" && composer.recommendationId === result.recommendation.id) {
           onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
           setApproval(null);
+          setWriting(true);
         }
         setState((previous) =>
           previous.status === "ready"
@@ -296,8 +304,8 @@ export function ThreadWorkspace({
         );
         setSuccess(
           input.decision === "decline"
-            ? "Suggestion declined. You can write your own reply below."
-            : "Seller decision recorded in the activity log. No external action was taken.",
+            ? "Đã bỏ đề xuất. Bạn có thể tự soạn câu trả lời bên dưới."
+            : "Đã ghi nhận quyết định vào nhật ký. Chưa thực hiện thao tác trên sàn.",
         );
       }
       if (mounted.current) onChanged();
@@ -323,11 +331,25 @@ export function ThreadWorkspace({
     busy.current = true; detailEpoch.current += 1; setSaving(true); setSaveError(null);
     try {
       const result = await client.retryReply(id, attemptId);
-      const detail = await client.thread(id);
-      if (mounted.current) {
-        setState({ status: "ready", detail });
-        if (composer.text.trim() === result.message.text.trim()) onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
-        setApproval(null); setSuccess("Reply sent."); onChanged();
+      if (!mounted.current) return;
+      setState((previous) => previous.status === "ready" ? {
+        status: "ready", detail: {
+          ...previous.detail,
+          messages: [...previous.detail.messages.filter((message) => message.id !== result.message.id), result.message],
+          audit: [...previous.detail.audit.filter((event) => event.id !== result.audit.id), result.audit],
+          recommendation: result.recommendation ?? previous.detail.recommendation,
+          deliveries: previous.detail.deliveries?.filter((delivery) => delivery.id !== attemptId),
+        },
+      } : previous);
+      if (composer.text.trim() === result.message.text.trim()) onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
+      setApproval(null);
+      setSuccess(sample ? "Đã gửi mô phỏng trong phiên xem thử; tải lại sẽ mất." : "Đã lưu câu trả lời trong hội thoại demo và gửi mô phỏng. Chưa gửi đến sàn.");
+      onChanged();
+      try {
+        const detail = await client.thread(id);
+        if (mounted.current) setState({ status: "ready", detail });
+      } catch {
+        if (mounted.current) setSuccess("Đã gửi mô phỏng và lưu trong hội thoại demo. Chưa làm mới được chi tiết; hãy tải lại để xem trạng thái mới nhất.");
       }
     } catch (error) { if (mounted.current) setSaveError(errorMessage(error)); }
     finally { busy.current = false; if (mounted.current) setSaving(false); }
@@ -339,11 +361,11 @@ export function ThreadWorkspace({
         <div className="mobile-detail-tools">
           <button className="text-button" onClick={onQueueOpen}>
             <Icon name="arrow" size={16} />
-            Conversations
+            Hội thoại
           </button>
         </div>
         <LoadingState />
-        <p>Opening conversation and evidence…</p>
+        <p>Đang mở hội thoại và nguồn tham chiếu…</p>
       </div>
     );
   if (state.status === "error")
@@ -352,12 +374,12 @@ export function ThreadWorkspace({
         <div className="mobile-detail-tools">
           <button className="text-button" onClick={onQueueOpen}>
             <Icon name="arrow" size={16} />
-            Conversations
+            Hội thoại
           </button>
         </div>
         <EmptyState
           icon="alert"
-          title="Conversation unavailable"
+          title="Chưa tải được hội thoại"
           action={
             <button
               className="button secondary"
@@ -366,7 +388,7 @@ export function ThreadWorkspace({
                 setAttempt((value) => value + 1);
               }}
             >
-              Try again
+              Thử lại
             </button>
           }
         >
@@ -414,7 +436,7 @@ export function ThreadWorkspace({
           <button
             className="icon-button mobile-queue-toggle"
             onClick={onQueueOpen}
-            aria-label="Open conversations"
+            aria-label="Mở danh sách hội thoại"
           >
             <Icon name="arrow" />
           </button>
@@ -423,16 +445,16 @@ export function ThreadWorkspace({
             <h2 id="thread-title">{thread.buyerName}</h2>
             <span><span className={`conversation-status status-${thread.conversationState ?? "unknown"}`}>{conversationLabel(thread)}</span><span className="identity-divider" aria-hidden="true" />{requestLabel(thread.intent)}</span>
           </div>
-          <button className="text-button analysis-toggle" aria-expanded={desktopContext || contextOpen} onClick={viewAnalysis}><Icon name="info" size={16} />View analysis</button>
+          <button className="text-button analysis-toggle" aria-expanded={desktopContext || contextOpen} onClick={viewAnalysis}><Icon name="info" size={16} />Vì sao Escala gợi ý?</button>
         </header>
-        <div className="thread-scroll" ref={historyRef} tabIndex={0} aria-label="Conversation history">
+        <div className="thread-scroll" ref={historyRef} tabIndex={0} aria-label="Lịch sử hội thoại">
           <section
             className="conversation-section"
-            aria-label="Message history"
+            aria-label="Lịch sử tin nhắn"
           >
             {detail.messages.length === 0 ? (
-              <EmptyState title="No messages in this thread">
-                Refresh the inbox to check for new conversation content.
+              <EmptyState title="Hội thoại chưa có tin nhắn">
+                Làm mới hộp thư để kiểm tra tin nhắn mới.
               </EmptyState>
             ) : (
               <ol className="message-list">
@@ -448,7 +470,7 @@ export function ThreadWorkspace({
                         <span>
                           {message.role === "buyer"
                             ? thread.buyerName
-                            : message.sentBy === "escala" ? "Escala" : "Seller"}
+                            : message.sentBy === "escala" ? "Escala" : "Người bán"}
                         </span>
                         <time dateTime={message.createdAt}>
                           {dateLabel(message.createdAt, true)}
@@ -461,7 +483,7 @@ export function ThreadWorkspace({
                       )}
                       <p>{message.text}</p>
                     </div>
-                    {message.sentBy === "escala" && <p className="automatic-attribution"><Icon name="spark" size={11} />Sent automatically by Escala</p>}
+                    {message.role === "seller" && <p className="automatic-attribution"><Icon name={message.sentBy === "escala" ? "spark" : "check"} size={11} />{message.sentBy === "escala" ? "Escala tự động · " : "Người bán · "}{sample ? "mô phỏng trong phiên xem thử" : "đã gửi mô phỏng"}</p>}
                   </li>
                 ))}
               </ol>
@@ -469,66 +491,71 @@ export function ThreadWorkspace({
           </section>
         </div>
         <div className="reply-dock">
+          <p className="simulation-note"><Icon name="shield" size={13} />{sample ? "Xem thử · chỉ lưu trong phiên, tải lại sẽ mất." : "Demo · lưu câu trả lời trong hội thoại; chỉ gửi mô phỏng, chưa gửi đến sàn."}</p>
           {generateError && <Notice variant="error">{generateError}</Notice>}
-          {generating && <Notice>Preparing a reply…</Notice>}
+          {generating && <Notice>Đang chuẩn bị bản nháp…</Notice>}
           {!handled && !(writing && !composer.recommendationId) && (uncertain || thread.conversationState === "AWAITING_PROCESSING" || Boolean(composer.recommendationId && composer.text)) && <RecommendationPanel intent={thread.intent} needsApproval={needsApproval} uncertain={uncertain} processing={thread.conversationState === "AWAITING_PROCESSING"} />}
-          {detail.deliveries?.filter((delivery) => delivery.state === "FAILED").map((delivery) => <div className="failed-delivery" key={delivery.id}><Icon name="alert" size={15} /><span>The reply could not be sent.</span><button className="text-button" disabled={saving} onClick={() => { void retryDelivery(delivery.id); }}>Retry delivery</button></div>)}
-          {handled && !showComposer ? <div className="handled-summary"><Icon name="check" size={20} /><div><strong>{thread.conversationState === "RESOLVED" ? "Conversation resolved" : latestReply?.sentBy === "escala" ? "Escala replied automatically" : "Reply sent · waiting for the customer"}</strong><p>{requestSummary(thread.intent)} {latestReply ? "The reply is saved in this conversation." : "No reply has been recorded."}</p></div>{latestReply && <button className="text-button" onClick={() => { const message = document.getElementById(`message-${latestReply.id}`); message?.scrollIntoView({ block: "nearest", behavior: "smooth" }); message?.focus({ preventScroll: true }); }}>View reply</button>}</div> : showComposer ? <section className="reply-composer" aria-labelledby={`${composerId}-heading`}>
-            <h3 className="sr-only" id={`${composerId}-heading`}>Reply to customer</h3>
+          {detail.deliveries?.filter((delivery) => delivery.state === "FAILED").map((delivery) => <div className="failed-delivery" key={delivery.id}><Icon name="alert" size={15} /><span>Chưa gửi mô phỏng được câu trả lời.</span><button className="text-button" disabled={saving} onClick={() => { void retryDelivery(delivery.id); }}>Thử gửi mô phỏng lại</button></div>)}
+          {handled && !showComposer ? <div className="handled-summary"><Icon name="check" size={20} /><div><strong>{thread.conversationState === "RESOLVED" ? "Đã kết thúc hội thoại" : latestReply?.sentBy === "escala" ? "Escala đã trả lời tự động · mô phỏng" : "Đã gửi mô phỏng · chờ khách phản hồi"}</strong><p>{requestSummary(thread.intent)} {latestReply ? "Câu trả lời được lưu trong hội thoại; chưa gửi đến sàn." : "Chưa ghi nhận câu trả lời."}</p></div>{latestReply && <button className="text-button" onClick={() => { const message = document.getElementById(`message-${latestReply.id}`); message?.scrollIntoView({ block: "nearest", behavior: "smooth" }); message?.focus({ preventScroll: true }); }}>Xem câu trả lời</button>}</div> : showComposer ? <section className="reply-composer" aria-labelledby={`${composerId}-heading`}>
+            <h3 className="sr-only" id={`${composerId}-heading`}>Soạn câu trả lời cho khách</h3>
             <div className={`draft-editor${editing ? " is-editing" : ""}`}>
               <div className="editor-label">
-                <label htmlFor={editing ? composerId : undefined}>{consumedDraft || staleDraft ? "Retained draft · review required" : composer.recommendationId ? "Suggested reply" : "Your reply"}</label>
-                {!editing && <button className="text-button" disabled={saving} onClick={editReply}>Edit</button>}
+                <label htmlFor={editing ? composerId : undefined}>{consumedDraft || staleDraft ? "Bản nháp giữ lại · cần kiểm tra" : composer.recommendationId ? "Bản nháp đề xuất · chưa gửi" : "Bản nháp của bạn · chưa gửi"}</label>
+                {!editing && <button className="text-button" disabled={saving} onClick={editReply}>Sửa</button>}
               </div>
-              {editing ? <textarea id={composerId} value={composer.text} onChange={(event) => updateComposer(event.target.value)} rows={3} maxLength={2000} placeholder="Write a message…" disabled={saving} aria-describedby={`${composerId}-help`} onKeyDown={(event) => {
+              {editing ? <textarea id={composerId} value={composer.text} onChange={(event) => updateComposer(event.target.value)} rows={3} maxLength={2000} placeholder="Nhập nội dung trả lời…" disabled={saving} aria-describedby={`${composerId}-help`} onKeyDown={(event) => {
                 if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing) {
                   event.preventDefault();
                   requestSend();
                 }
               }} /> : <p className="suggested-reply">{composer.text}</p>}
             </div>
-            {staleDraft && <Notice variant="warning">A new customer message changed the context. Your draft is retained. <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); }}>I reviewed the latest message</button></Notice>}
-            {consumedDraft && !staleDraft && <Notice variant="warning">{prepared?.id === composer.recommendationId && prepared?.status === "sent" ? "This suggestion was already sent. Review the latest reply before sending a follow-up." : "This suggestion is no longer available. Review the conversation before using your retained draft."} <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); setWriting(true); }}>I reviewed this as a follow-up</button></Notice>}
-            {revision === undefined && <Notice variant="warning">Refresh this conversation before sending.</Notice>}
-            {(saveError || success) && <div className="composer-feedback">{saveError ? <Notice variant="error">{saveError} Your reply is retained.</Notice> : <Notice variant="success">{success}</Notice>}</div>}
+            {staleDraft && <Notice variant="warning">Tin nhắn mới làm thay đổi ngữ cảnh. Bản nháp vẫn được giữ. <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); }}>Tôi đã đọc tin nhắn mới nhất</button></Notice>}
+            {consumedDraft && !staleDraft && <Notice variant="warning">{prepared?.id === composer.recommendationId && prepared?.status === "sent" ? "Đề xuất này đã gửi mô phỏng. Kiểm tra câu trả lời gần nhất trước khi viết tiếp." : "Đề xuất không còn hiệu lực. Kiểm tra hội thoại trước khi dùng bản nháp giữ lại."} <button className="text-button" disabled={saving} onClick={() => { onDraftChange(draftKey, { ...composer, contextRevision: revision, recommendationId: undefined }); setApproval(null); setSaveError(null); setWriting(true); }}>Tôi đã kiểm tra đây là tin nhắn tiếp theo</button></Notice>}
+            {revision === undefined && <Notice variant="warning">Làm mới hội thoại trước khi gửi mô phỏng.</Notice>}
+            {(saveError || success) && <div className="composer-feedback">{saveError ? <Notice variant="error">{saveError} Nội dung bạn soạn vẫn được giữ.</Notice> : <Notice variant="success">{success}</Notice>}</div>}
             <div className="composer-footer">
-              <p id={`${composerId}-help`}>{needsApproval ? "This reply needs your approval before sending." : editing ? "Ctrl/⌘ Enter to send" : "Review the reply before sending."}</p>
-              <button className="button primary" disabled={!canSend} onClick={requestSend}><Icon name="send" size={16} />{saving ? "Sending…" : needsApproval ? "Approve & send" : "Send reply"}</button>
+              <p id={`${composerId}-help`}>{needsApproval ? "Kiểm tra và phê duyệt nội dung trước khi gửi mô phỏng." : editing ? "Ctrl/⌘ Enter để gửi mô phỏng" : "Kiểm tra nội dung trước khi gửi mô phỏng."}</p>
+              <button className="button primary" disabled={!canSend} onClick={requestSend}><Icon name="send" size={16} />{saving ? "Đang gửi mô phỏng…" : needsApproval ? "Duyệt và gửi mô phỏng" : "Gửi mô phỏng"}</button>
             </div>
-          </section> : !handled && <div className="manual-reply-action"><button className="button primary" disabled={saving} onClick={() => { onDraftChange(draftKey, { text: "", contextRevision: revision, seenRecommendationKey: composer.seenRecommendationKey }); editReply(); }}>Reply manually</button><button className="text-button" onClick={viewAnalysis}>View analysis</button></div>}
+          </section> : !handled && <div className="manual-reply-action"><button className="button primary" disabled={saving} onClick={() => { onDraftChange(draftKey, { text: "", contextRevision: revision, seenRecommendationKey: composer.seenRecommendationKey }); editReply(); }}>Tự soạn câu trả lời</button><button className="text-button" onClick={viewAnalysis}>Vì sao Escala gợi ý?</button></div>}
           {!showComposer && (saveError || success) && <Notice variant={saveError ? "error" : "success"}>{saveError ?? success}</Notice>}
           <details className="conversation-options">
-            <summary>More options</summary>
+            <summary>Thao tác khác</summary>
             <div className="conversation-actions">
-              {handled && !showComposer && <button className="text-button" onClick={editReply}>Write a follow-up</button>}
-              {!handled && <button className="text-button" disabled={saving || generating} onClick={() => { void generate(); }}>Prepare another reply</button>}
+              {handled && !showComposer && <button className="text-button" onClick={editReply}>Viết tin nhắn tiếp theo</button>}
+              {!handled && <button className="text-button" disabled={saving || generating} onClick={() => { void generate(); }}>Chuẩn bị bản nháp khác</button>}
               {(composer.text || composer.recommendationId) && <button className="text-button" disabled={saving} onClick={() => {
-                if (composer.recommendationId && recommendation?.status === "pending") void decide({ decision: "decline" });
+                if (busy.current) return;
+                if (composer.recommendationId && recommendation?.status === "pending") {
+                  void decide({ decision: "decline" });
+                  return;
+                }
                 onDraftChange(draftKey, { text: "", seenRecommendationKey: composer.seenRecommendationKey });
                 setApproval(null); setSaveError(null); setWriting(true);
-              }}>Discard draft</button>}
-              <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("WAITING_FOR_SELLER_REVIEW"); }}>Handle manually</button>
-              <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("ESCALATED"); }}>Escalate</button>
-              {thread.conversationState !== "RESOLVED" && <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("RESOLVED"); }}>Mark resolved</button>}
+              }}>Bỏ bản nháp</button>}
+              <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("WAITING_FOR_SELLER_REVIEW"); }}>Chuyển sang tự xử lý</button>
+              <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("ESCALATED"); }}>Chuyển người phụ trách</button>
+              {thread.conversationState !== "RESOLVED" && <button className="text-button" disabled={saving || revision === undefined} onClick={() => { void changeConversation("RESOLVED"); }}>Đánh dấu đã kết thúc</button>}
             </div>
           </details>
         </div>
       </section>
-      <aside className="desktop-context" aria-label="Analysis, evidence and activity">
+      <aside className="desktop-context" aria-label="Phân tích, nguồn tham chiếu và hoạt động">
         {context}
       </aside>
-      <Drawer open={Boolean(approval && approved)} onClose={() => setApproval(null)} title={thread.intent === "cancellation" ? "Confirm cancellation-related reply" : "Confirm sensitive reply"} side="center">
+      <Drawer open={Boolean(approval && approved)} onClose={() => setApproval(null)} title={thread.intent === "cancellation" ? "Xác nhận câu trả lời về hủy đơn" : "Xác nhận câu trả lời nhạy cảm"} side="center">
         {approval && <div className="approval-confirmation">
-          <p>This message discusses a sensitive request. No order change will occur automatically.</p>
-          <div className="confirmation-reply"><span>Reply to {thread.buyerName}</span><p>{approval.text}</p></div>
-          <p className="confirmation-context">Confirmation applies only to this exact reply and the conversation you reviewed.</p>
-          <div className="confirmation-actions"><button className="button secondary" onClick={() => setApproval(null)}>Cancel</button><button className="button primary" disabled={!approved || !canSend} onClick={() => { if (approved && canSend) { const snapshot = approval; setApproval(null); void sendReply(snapshot.text, snapshot.recommendationId, "seller", snapshot); } }}>Confirm &amp; send</button></div>
+          <p>Tin nhắn đề cập yêu cầu nhạy cảm. Chỉ gửi mô phỏng; không tự thay đổi đơn hàng.</p>
+          <div className="confirmation-reply"><span>Trả lời {thread.buyerName}</span><p>{approval.text}</p></div>
+          <p className="confirmation-context">Phê duyệt chỉ áp dụng cho đúng nội dung và ngữ cảnh hội thoại bạn vừa kiểm tra.</p>
+          <div className="confirmation-actions"><button className="button secondary" onClick={() => setApproval(null)}>Hủy</button><button className="button primary" disabled={!approved || !canSend} onClick={() => { if (approved && canSend) { const snapshot = approval; setApproval(null); void sendReply(snapshot.text, snapshot.recommendationId, "seller", snapshot); } }}>Xác nhận và gửi mô phỏng</button></div>
         </div>}
       </Drawer>
       <Drawer
         open={contextOpen}
         onClose={onContextClose}
-        title="Conversation analysis"
+        title="Phân tích hội thoại"
       >
         {context}
       </Drawer>

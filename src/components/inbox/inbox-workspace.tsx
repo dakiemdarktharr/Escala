@@ -166,7 +166,7 @@ export function InboxWorkspace({
     if (!brief || mode === "sample" || acknowledged.current.has(brief.asOf)) return;
     // Acknowledge only the snapshot that has reached the rendered opening brief.
     acknowledged.current.add(brief.asOf);
-    void client.updateAutonomy({ visitThrough: brief.asOf }).catch((error: unknown) => setAutonomyError(`Visit could not be saved. ${errorMessage(error)}`));
+    void client.updateAutonomy({ visitThrough: brief.asOf }).catch((error: unknown) => setAutonomyError(`Chưa lưu được mốc truy cập. ${errorMessage(error)}`));
   }, [brief, client, mode]);
 
   async function changeAutonomy(nextMode: AutonomyMode) {
@@ -249,13 +249,13 @@ export function InboxWorkspace({
   return (
     <div className="app-shell">
       <a className="skip-link" href="#workspace">
-        Skip to inbox
+        Chuyển tới hộp thư
       </a>
       <header className="topbar">
         <Link
           className="brand"
           href={mode === "sample" ? "/?preview=1" : "/"}
-          aria-label="Escala inbox"
+          aria-label="Hộp thư Escala"
         >
           <span className="brand-mark" aria-hidden="true">
             e
@@ -265,65 +265,77 @@ export function InboxWorkspace({
           </span>
         </Link>
         <span className="topbar-divider" />
-        <h1 className="workspace-label" id="inbox-heading" tabIndex={-1}>Inbox</h1>
+        <h1 className="workspace-label" id="inbox-heading" tabIndex={-1}>Hộp thư</h1>
         <div className="topbar-actions">
-          <label className={`autonomy-control autonomy-${settings?.mode ?? "unknown"}`} title={autonomyError ?? "Choose whether Escala prepares and sends eligible replies, only drafts, or pauses"}>
+          <label className={`autonomy-control autonomy-${settings?.mode ?? "unknown"}`} title={autonomyError ?? "Chọn tự xử lý và gửi mô phỏng, chỉ soạn nháp, hoặc tạm dừng"}>
             <Icon name={settings?.mode === "ON" ? "spark" : "shield"} size={15} />
-            <select aria-label="Escala autonomy" disabled={!settings || updatingMode || mode === "sample"} value={settings?.mode ?? "unknown"} onChange={(event) => { void changeAutonomy(event.target.value as AutonomyMode); }}>
-              {!settings && <option value="unknown">{mode === "sample" ? "Static preview" : "Autonomy unavailable"}</option>}
-              <option value="ON">Escala active</option><option value="DRAFT_ONLY">Draft only</option><option value="PAUSED">Escala paused</option>
+            <select aria-describedby="autonomy-help" aria-label="Chế độ xử lý của Escala" disabled={!settings || updatingMode || mode === "sample"} value={settings?.mode ?? "unknown"} onChange={(event) => { void changeAutonomy(event.target.value as AutonomyMode); }}>
+              {!settings && <option value="unknown">{mode === "sample" ? "Xem thử tĩnh" : "Chưa tải được chế độ"}</option>}
+              <option value="ON">Tự xử lý (mô phỏng)</option><option value="DRAFT_ONLY">Chỉ soạn nháp</option><option value="PAUSED">Tạm dừng</option>
             </select>
           </label>
           <label className="theme-picker">
             <Icon name={theme === "dark" ? "moon" : theme === "light" ? "sun" : "monitor"} size={16} />
-            <span className="sr-only">Color theme</span>
-            <select aria-label="Color theme" value={theme} onChange={(event) => changeTheme(event.target.value as ThemePreference)}>
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+            <span className="sr-only">Giao diện màu</span>
+            <select aria-label="Giao diện màu" value={theme} onChange={(event) => changeTheme(event.target.value as ThemePreference)}>
+              <option value="system">Theo hệ thống</option>
+              <option value="light">Sáng</option>
+              <option value="dark">Tối</option>
             </select>
           </label>
           <details className="demo-disclosure">
-            <summary><span className="environment-dot" />Demo mode</summary>
+            <summary><span className="environment-dot" />Chế độ demo</summary>
             <div className="demo-details">
-              <strong>{mode === "sample" ? "Sample preview" : "Demo workspace"}</strong>
-              <p>Synthetic buyer messages. Simulated delivery. No marketplace messages or order changes.</p>
-              <p>{mode === "sample" ? "Illustrative replies stay in this browser session and reset on reload. No live AI is used." : "Local demo runs can use test-generated replies or fallback templates. View analysis to check the source of each reply."}</p>
-              <button className="text-button" onClick={() => changeMode(mode === "sample" ? "api" : "sample")}>{mode === "sample" ? "Use saved workspace" : "Explore sample preview"}</button>
+              <strong>{mode === "sample" ? "Bản xem thử" : "Không gian demo"}</strong>
+              <p>Dữ liệu khách hàng giả lập. Chỉ gửi mô phỏng; không gửi tin hoặc thay đổi đơn hàng trên sàn.</p>
+              <p>{mode === "sample" ? "Câu trả lời minh họa chỉ lưu trong phiên trình duyệt và mất khi tải lại. Không gọi AI trực tiếp." : "Tùy cấu hình, bản nháp do OpenAI tạo, từ dữ liệu kiểm thử hoặc mẫu dự phòng. Xem phân tích để kiểm tra nguồn của từng bản nháp."}</p>
+              <button className="text-button" onClick={() => changeMode(mode === "sample" ? "api" : "sample")}>{mode === "sample" ? "Mở không gian đã lưu" : "Mở bản xem thử"}</button>
             </div>
           </details>
         </div>
       </header>
+      <p className="mode-help" id="autonomy-help">
+        <Icon name="shield" size={14} />
+        {mode === "sample"
+          ? "Bản xem thử: dữ liệu chỉ ở phiên này, tải lại sẽ mất. Không gọi AI hay gửi đến sàn."
+          : settings?.mode === "ON"
+            ? "Tự xử lý: Escala chuẩn bị và gửi mô phỏng câu trả lời đủ điều kiện. Việc nhạy cảm vẫn cần bạn duyệt."
+            : settings?.mode === "DRAFT_ONLY"
+              ? "Chỉ soạn nháp: Escala chuẩn bị nội dung, bạn kiểm tra và gửi mô phỏng."
+              : settings?.mode === "PAUSED"
+                ? "Tạm dừng tự động: bạn vẫn có thể tự soạn và gửi mô phỏng."
+                : "Chưa tải được chế độ xử lý. Đây là demo, chưa gửi tin đến sàn."}
+      </p>
       <div className="shell-body">
         <main className="workspace" id="workspace" tabIndex={-1}>
           {mode === "api" && autonomyError && <div className="autonomy-error" role="status">{autonomyError}</div>}
-          {brief && <section className={`seller-brief${briefOpen ? " is-open" : ""}`} aria-label="Opening activity brief">
+          {brief && <section className={`seller-brief${briefOpen ? " is-open" : ""}`} aria-label="Tóm tắt hoạt động khi mở hộp thư">
             <div className="brief-heading">
               <Icon name="spark" size={18} />
-              <div className="brief-story"><h2>{brief.firstVisit ? "Your workspace at a glance" : "While you were away"}</h2>
-                <p className="brief-narrative">{quietBrief ? brief.firstVisit ? "No activity has been recorded yet." : "No new activity since your last visit." : `${brief.counts.incoming} ${brief.counts.incoming === 1 ? "message arrived" : "messages arrived"}. Escala sent ${brief.counts.automaticReplies} ${brief.counts.automaticReplies === 1 ? "reply" : "replies"} automatically.`} <span className="brief-backlog">{brief.counts.needsReview + brief.counts.approvalRequired} {brief.counts.needsReview + brief.counts.approvalRequired === 1 ? "conversation is" : "conversations are"} waiting for you.</span></p>
-                <p>{brief.since ? `Since ${dateLabel(brief.since, true)}` : "Recorded activity"} · through {dateLabel(brief.asOf, true)}. Snapshot when you opened the inbox.</p>
+              <div className="brief-story"><h2>{brief.firstVisit ? "Tổng quan hộp thư" : "Trong lúc bạn vắng mặt"}</h2>
+                <p className="brief-narrative">{quietBrief ? brief.firstVisit ? "Chưa ghi nhận hoạt động." : "Chưa có hoạt động mới từ lần truy cập trước." : `${brief.counts.incoming} tin nhắn mới. Escala đã tự động gửi mô phỏng ${brief.counts.automaticReplies} câu trả lời.`} <span className="brief-backlog">{brief.counts.needsReview + brief.counts.approvalRequired} hội thoại đang chờ bạn xử lý.</span></p>
+                <p>{brief.since ? `Từ ${dateLabel(brief.since, true)}` : "Hoạt động đã ghi nhận"} · đến {dateLabel(brief.asOf, true)}. Ảnh chụp trạng thái khi mở hộp thư.</p>
               </div>
-              <button className="text-button" onClick={() => setBriefOpen(!briefOpen)} aria-expanded={briefOpen} aria-controls="opening-summary">{briefOpen ? "Hide summary" : "View summary"}</button>
+              <button className="text-button" onClick={() => setBriefOpen(!briefOpen)} aria-expanded={briefOpen} aria-controls="opening-summary">{briefOpen ? "Thu gọn" : "Xem chi tiết"}</button>
             </div>
             {briefOpen && <div className="brief-content" id="opening-summary">
-              <p className="brief-summary">In this period: {brief.counts.resolved} conversations resolved · {brief.counts.failed} failed sends · {brief.counts.escalated} escalations. At opening: {brief.counts.needsReview} need review · {brief.counts.approvalRequired} need approval.</p>
-              {brief.events.length === 0 && brief.orderUpdates.length === 0 ? <p className="brief-summary">No recorded activity to show for this period.</p> : <div className="brief-events"><ul>{[...brief.orderUpdates, ...brief.events].slice(0, 12).map((event) => <li key={event.id}><button className="text-button" onClick={() => selectThread(event.threadId)}><strong>{event.buyerName}</strong> · {readable(event.action)}</button><time dateTime={event.createdAt}>{dateLabel(event.createdAt, true)}</time>{event.reasons[0] && <span>{readable(event.reasons[0])}</span>}</li>)}</ul></div>}
-              {brief.counts.needsReview + brief.counts.approvalRequired > 0 && <button className="button secondary" onClick={() => { setFilter("needs-you"); const first = queue.status === "ready" ? queue.threads.find(needsSeller) : null; if (first) selectThread(first.id); setBriefOpen(false); }}>Review conversations <Icon name="chevron" size={14} /></button>}
+              <p className="brief-summary">Trong kỳ: {brief.counts.resolved} hội thoại kết thúc · {brief.counts.failed} lần gửi mô phỏng lỗi · {brief.counts.escalated} lần chuyển phụ trách. Khi mở: {brief.counts.needsReview} cần kiểm tra · {brief.counts.approvalRequired} cần phê duyệt.</p>
+              {brief.events.length === 0 && brief.orderUpdates.length === 0 ? <p className="brief-summary">Chưa có hoạt động trong khoảng thời gian này.</p> : <div className="brief-events"><ul>{[...brief.orderUpdates, ...brief.events].slice(0, 12).map((event) => <li key={event.id}><button className="text-button" onClick={() => selectThread(event.threadId)}><strong>{event.buyerName}</strong> · {readable(event.action)}</button><time dateTime={event.createdAt}>{dateLabel(event.createdAt, true)}</time>{event.reasons[0] && <span>{readable(event.reasons[0])}</span>}</li>)}</ul></div>}
+              {brief.counts.needsReview + brief.counts.approvalRequired > 0 && <button className="button secondary" onClick={() => { setFilter("needs-you"); const first = queue.status === "ready" ? queue.threads.find(needsSeller) : null; if (first) selectThread(first.id); setBriefOpen(false); }}>Xem hội thoại cần xử lý <Icon name="chevron" size={14} /></button>}
             </div>}
           </section>}
           {refreshError && (
             <div className="refresh-error">
               <Notice variant="error">
-                {refreshError} You’re viewing the last loaded inbox.{" "}
+                {refreshError} Bạn đang xem dữ liệu hộp thư đã tải gần nhất.{" "}
                 <button className="text-button" onClick={refreshQueue}>
-                  Retry refresh
+                  Thử làm mới lại
                 </button>
               </Notice>
             </div>
           )}
           <div className="workspace-grid">
-            <aside className="desktop-queue" aria-label="Conversation queue">
+            <aside className="desktop-queue" aria-label="Danh sách hội thoại">
               <ConversationQueue {...queueProps} />
             </aside>
             <div className="active-workspace">
@@ -360,10 +372,10 @@ export function InboxWorkspace({
                   <EmptyState
                     title={
                       queue.status === "error"
-                        ? "Let’s reconnect your inbox"
+                        ? "Kết nối lại hộp thư"
                         : queue.status === "loading"
-                          ? "Getting your workspace ready"
-                          : "Room for a thoughtful reply"
+                          ? "Đang chuẩn bị không gian làm việc"
+                          : "Chọn hội thoại để bắt đầu"
                     }
                     action={
                       <div className="empty-actions">
@@ -373,13 +385,13 @@ export function InboxWorkspace({
                               className="button secondary"
                               onClick={refreshQueue}
                             >
-                              Try again
+                              Thử lại
                             </button>
                             <button
                               className="text-button"
                               onClick={() => changeMode("sample")}
                             >
-                              Explore sample inbox
+                              Khám phá hộp thư mẫu
                             </button>
                           </>
                         )}
@@ -387,16 +399,16 @@ export function InboxWorkspace({
                           className="button secondary mobile-queue-toggle"
                           onClick={() => setQueueOpen(true)}
                         >
-                          Open conversations
+                          Mở danh sách hội thoại
                         </button>
                       </div>
                     }
                   >
                     {queue.status === "error"
-                      ? "Your conversation list couldn’t be loaded. Retry the connection or explore clearly labeled sample conversations."
+                      ? "Chưa tải được danh sách hội thoại. Thử kết nối lại hoặc mở hộp thư mẫu."
                       : queue.status === "loading"
-                        ? "Loading conversations, evidence, and recorded decisions."
-                        : "Choose a conversation to review its context and decide what happens next."}
+                        ? "Đang tải hội thoại, nguồn tham chiếu và quyết định đã lưu."
+                        : "Chọn hội thoại để xem ngữ cảnh và bước xử lý tiếp theo."}
                   </EmptyState>
                 </div>
               )}
@@ -407,7 +419,7 @@ export function InboxWorkspace({
       <Drawer
         open={queueOpen}
         onClose={() => setQueueOpen(false)}
-        title="Conversations"
+        title="Hội thoại"
         side="left"
       >
         <ConversationQueue {...queueProps} />
